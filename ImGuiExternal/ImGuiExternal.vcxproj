@@ -152,6 +152,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Draw.cpp" />
+    <ClCompile Include="Entitys.cpp" />
+    <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_draw.cpp" />
@@ -159,10 +162,19 @@
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_tables.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="simulate.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Threads.cpp" />
+    <ClCompile Include="WorldToScreen.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bones.h" />
+    <ClInclude Include="Draw.h" />
+    <ClInclude Include="Entitys.h" />
+    <ClInclude Include="FileManager.h" />
+    <ClInclude Include="guns.h" />
     <ClInclude Include="include.h" />
+    <ClInclude Include="Offsets.h" />
     <ClInclude Include="Overlay.hpp" />
     <ClInclude Include="Libraries\ImGui\Include\ImGui\imconfig.h" />
     <ClInclude Include="Libraries\ImGui\Include\ImGui\imgui.h" />
@@ -172,6 +184,12 @@
     <ClInclude Include="Libraries\ImGui\Include\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Libraries\ImGui\Include\ImGui\imstb_textedit.h" />
     <ClInclude Include="Libraries\ImGui\Include\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ProcessManager.hpp" />
+    <ClInclude Include="Settings.h" />
+    <ClInclude Include="simulate.h" />
+    <ClInclude Include="Threads.h" />
+    <ClInclude Include="Vector.h" />
+    <ClInclude Include="WorldToScreen.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

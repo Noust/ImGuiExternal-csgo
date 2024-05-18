@@ -1,15 +1,4 @@
-#include <iostream>
-#include <Windows.h>
-#include <tlhelp32.h>
-#include <dwmapi.h>
-#include <psapi.h>
-#include "Overlay.hpp"
-#include <DirectX/d3d9.h>
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx9.h>
-#include <ImGui/imgui_impl_win32.h>
-#pragma comment(lib, "d3d9.lib")
-#pragma comment(lib, "dwmapi.lib")
+#include "include.h"
 
 bool createConsole = true;
 bool isInitialized = false;
