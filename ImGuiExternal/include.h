@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdio>
-#include <psapi.h>
 #include <iostream>
 #include <Windows.h>
 #include <vector>
