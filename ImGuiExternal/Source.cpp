@@ -14,7 +14,8 @@ bomb hack
 speed hack
 efectos de window
 esp detectar si se agacha
-recoil control*/
+recoil control
+skin changer*/
 
 IDirect3DTexture9* pTexture = nullptr;
 
