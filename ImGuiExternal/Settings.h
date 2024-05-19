@@ -7,11 +7,15 @@ namespace USettings {
 	//Gun
 	bool triggerbot = false;
 	int triggerbot_delayms = 1;
-	bool Silent_Aim = false;
-	bool Head_Target = false;
-	bool Body_Target = true;
+
+	bool Aimbot = false;
+	inline float AimFov = 200;
+	inline float Smooth = 0.7;
+	inline int RCSBullet = 1;
+	inline Vector2 RCSScale = { 1.f,1.f };
+	bool Head_Target = true;
+	bool Body_Target = false;
 	bool ShowFov = false;
-	int AimbotFov = 1920;
 	int FovThickness = 0;
 	ImColor FovColor = { 255,255,255 };
 	bool ShowTarget = false;
@@ -19,6 +23,14 @@ namespace USettings {
 	ImColor TargetColor = { 255,0,0 };
 	bool FilledCircle = false;
 	ImColor FilledCircleColor = { 0,0,0,80 };
+	inline int AimBotHotKey = 0;
+	inline int HotKey = VK_LBUTTON;
+	inline std::vector<int> HotKeyList{ VK_LBUTTON, VK_LMENU, VK_RBUTTON, VK_XBUTTON1, VK_XBUTTON2, VK_CAPITAL, VK_LSHIFT, VK_LCONTROL };// added new button VK_LBUTTON
+
+	inline void SetHotKey(int Index)
+	{
+		HotKey = HotKeyList.at(Index);
+	}
 
 	//visuals
 	bool fov_changer = false;
@@ -68,7 +80,7 @@ namespace USettings {
 	int Bone_Esp_Thickness = 0;
 	bool Bone_Esp = false;
 
-	Vector2 SnaplLine_Esp_Start_Point = { 1920 / 2,1080 };
+	Vector2 SnaplLine_Esp_Start_Point = { X_Screen / 2,Y_Screen };
 	bool SnaplLine_Esp_End_Point = false;
 	ImColor Enemy_SnaplLine_Esp_Color = { 255,0,0 };
 	ImColor Squad_SnaplLine_Esp_Color = { 0,0,255 };

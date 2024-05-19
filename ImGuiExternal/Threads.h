@@ -3,3 +3,4 @@
 
 void GetClients();
 void TriggerBot();
+void Aimbot(int index);

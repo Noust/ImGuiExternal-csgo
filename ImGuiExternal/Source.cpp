@@ -5,16 +5,55 @@ bool isMenuVisible = true;
 char distance[50];
 char names[16];
 
-/*anti flash
+/*checar el otro source y agregar cosas
+anti flash
 aimbot
 money services
 visibility check
 bomb hack
 speed hack
 efectos de window
-esp detectar si se agacha*/
+esp detectar si se agacha
+recoil control*/
 
 IDirect3DTexture9* pTexture = nullptr;
+
+int FindClosestEnemy() {
+	int ClosestEntity = 0;
+	DWORD64 LocalPlayer = E->GetLocal();
+	if (LocalPlayer != NULL) {
+		if (E->GetHealth(E->GetLocal()) > 0 && E->GetHealth(E->GetLocal()) < 101) {
+			float Finish;
+			float Closest = FLT_MAX;
+			for (int i = 0; i < 64; i++) {
+				DWORD64 EntityAddr = E->GetEnt(i);
+				if (EntityAddr != 0) {
+					DWORD64 sceneNode; read<DWORD64>(EntityAddr, C_BaseEntity::m_pGameSceneNode, sceneNode);
+					if (sceneNode == NULL)
+						continue;
+					DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+					if (BoneArray == NULL)
+						continue;
+					float EnHealth = E->GetHealth(EntityAddr); 
+					if (EnHealth == 0 || EnHealth > 100)
+						continue;
+					float Distance = E->GetBonePos3D(BoneArray, 28).dist(E->GetPos(E->GetLocal())) / 100; 
+					if (Distance > USettings::ESP_Distance)
+						continue;
+					if (E->GetTeam(EntityAddr) == E->GetTeam(E->GetLocal()))
+						continue;
+					Vector2 PosScreen = E->GetBonePos(BoneArray, bones::neck);
+					Finish = PosScreen.dist({ X_Screen / 2, Y_Screen / 2 });
+					if (Finish < Closest) {
+						Closest = Finish;
+						ClosestEntity = i;
+					}
+				}
+			}
+		}
+	}
+	return ClosestEntity;
+}
 
 void Colors() {
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -206,14 +245,49 @@ void renderImGui() {
 			centertext<float>("Window Size X:%0.f Y:%0.f", windowsize.x, windowsize.y);
 		}
 		else if (USettings::MenuWindow == 1) {
-
-		}
-		else if (USettings::MenuWindow == 2) {
-			ImGui::Checkbox("Buny Hop", &USettings::BunnyHop);
 			ImGui::Checkbox("trigger Bot", &USettings::triggerbot);
 			if (USettings::triggerbot) {
 				ImGui::SliderInt("triggerbot delay", &USettings::triggerbot_delayms, 0, 200);
+				ImGui::Separator();
 			}
+			ImGui::Checkbox("AimBot", &USettings::Aimbot);
+			if (USettings::Aimbot) {
+				if (ImGui::Combo("AimKey", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL")) {
+					USettings::SetHotKey(USettings::AimBotHotKey);
+				}
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+				ImGui::SliderFloat("AimBot Smooth", &USettings::Smooth, 0, 0.7f);
+				ImGui::SliderFloat("AimBot Fov", &USettings::AimFov, 10, 1920);
+				ImGui::Separator();
+				ImGui::Checkbox("Head Target", &USettings::Head_Target);
+				if (USettings::Head_Target)
+					USettings::Body_Target = false;
+				ImGui::Checkbox("Body Target", &USettings::Body_Target);
+				if (USettings::Body_Target)
+					USettings::Head_Target = false;
+				ImGui::Separator();
+				ImGui::Checkbox("Show Fov", &USettings::ShowFov);
+				if (USettings::ShowFov) {
+					ImGui::SliderInt("Fov Thickness", &USettings::FovThickness, 0, 10);
+					ImGui::ColorEdit3("Fov Color", (float*)&USettings::FovColor);
+					ImGui::Checkbox("Filled Circle", &USettings::FilledCircle);
+					ImGui::ColorEdit3("Filled Circle Color", (float*)&USettings::FilledCircleColor);
+					ImGui::Separator();
+					ImGui::Spacing();
+					ImGui::Spacing();
+				}
+				ImGui::Checkbox("Show Target", &USettings::ShowTarget);
+				if (USettings::ShowTarget) {
+					ImGui::SliderInt("Target Thickness", &USettings::TargetThickness, 0, 10);
+					ImGui::ColorEdit3("Target Color", (float*)&USettings::TargetColor);
+				}
+				ImGui::Separator();
+			}
+		}
+		else if (USettings::MenuWindow == 2) {
+			ImGui::Checkbox("Buny Hop", &USettings::BunnyHop);
 		}
 		else if (USettings::MenuWindow == 3) {
 			ImGui::Checkbox("Fov Changer", &USettings::fov_changer);
@@ -365,7 +439,7 @@ void renderImGui() {
 			ImGui::Spacing();
 			ImGui::Text("Feature Options");
 			if (ImGui::Button("Disable all")) {
-				USettings::Silent_Aim = false;
+				USettings::Aimbot = false;
 				USettings::Head_Target = false;
 				USettings::Body_Target = true;
 				USettings::ShowFov = false;
@@ -399,11 +473,13 @@ void renderImGui() {
 			if (ImGui::Button("Default")) {
 				USettings::triggerbot = false;
 				USettings::triggerbot_delayms = 1;
-				USettings::Silent_Aim = false;
+				USettings::Aimbot = false;
 				USettings::Head_Target = false;
 				USettings::Body_Target = true;
 				USettings::ShowFov = false;
-				USettings::AimbotFov = 1920;
+				USettings::AimFov = 200;
+				USettings::Smooth = 0.7;
+				USettings::HotKey = VK_LBUTTON;
 				USettings::FovThickness = 0;
 				USettings::FovColor = { 255,255,255 };
 				USettings::ShowTarget = false;
@@ -475,9 +551,9 @@ void renderImGui() {
 		if (USettings::window_animation)
 			ImGui::GetBackgroundDrawList()->AddRect({ windowpos.x - 1, windowpos.y - 1 }, { windowpos.x + windowsize.x + 1, windowpos.y + windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);//84, 171, 219
 		if (USettings::navigationwindow_animation)
-			ImGui::GetBackgroundDrawList()->AddRect({ child_windowpos.x - 1, child_windowpos.y - 1 }, { child_windowpos.x + child_windowsize.x + 1, child_windowpos.y + child_windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+			ImGui::GetForegroundDrawList()->AddRect({ child_windowpos.x - 1, child_windowpos.y - 1 }, { child_windowpos.x + child_windowsize.x + 1, child_windowpos.y + child_windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
 		if (USettings::optionswindow_animation)
-			ImGui::GetBackgroundDrawList()->AddRect({ child_windowpos1.x - 1, child_windowpos1.y - 1 }, { child_windowpos1.x + child_windowsize1.x + 1, child_windowpos1.y + child_windowsize1.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+			ImGui::GetForegroundDrawList()->AddRect({ child_windowpos1.x - 1, child_windowpos1.y - 1 }, { child_windowpos1.x + child_windowsize1.x + 1, child_windowpos1.y + child_windowsize1.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
 		if (USettings::show_watermark)
 			ImGui::GetBackgroundDrawList()->AddImage((void*)pTexture, ImVec2(1726, -10), ImVec2(1906, 170));
 		ImGui::End();
@@ -508,7 +584,7 @@ void renderImGui() {
 			if (LocalPlayer == CurrentPawn)
 				continue;
 
-			if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance || E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 < 0.1f)
+			if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance)
 				continue;
 
 			DWORD64 CameraServices; read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices);
@@ -569,16 +645,18 @@ void renderImGui() {
 				}
 			}
 			if (USettings::Bone_Esp) {
-				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;/*
-				for (int j = 0; j < 32; j++) {
-					Vector2 Bonepos = E->GetBonePos(BoneArray, j);
-					sprintf_s(number, sizeof(number), "%d", j);
-					DrawString(Bonepos, ImColor(255, 255, 255), 2, number);
-				}*/
-				if (TeamNum == LTeamNum && USettings::Show_Squad)
-					DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
-				else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-					DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;/*
+					for (int j = 0; j < 32; j++) {
+						Vector2 Bonepos = E->GetBonePos(BoneArray, j);
+						sprintf_s(number, sizeof(number), "%d", j);
+						DrawString(Bonepos, ImColor(255, 255, 255), 2, number);
+					}*/
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
+				}
 			}
 			if (USettings::HealthBar_ESP) {
 				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
@@ -643,7 +721,7 @@ void renderImGui() {
 						if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
 							if (TeamNum == LTeamNum && USettings::Show_Squad)
 								DrawString(posscreen2, color, 2, it->second.c_str());
-							if (TeamNum != LTeamNum && USettings::Show_Squad)
+							else if (TeamNum != LTeamNum && USettings::Show_Enemy)
 								DrawString(posscreen2, color, 2, it->second.c_str());
 						}
 					}
@@ -656,6 +734,53 @@ void renderImGui() {
 						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width);
 					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
 						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width);
+				}
+			}
+		}
+	}
+	if (USettings::ShowFov || USettings::FilledCircle) {
+		DWORD64 local = E->GetLocal();
+		if (local != NULL) {
+			int health = E->GetHealth(local);
+			if (health > 0 && health < 101) {
+				if (USettings::ShowFov)
+					DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::AimFov, USettings::FovThickness, USettings::FovColor);
+				if (USettings::FilledCircle)
+					ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(X_Screen / 2, Y_Screen / 2), USettings::AimFov, USettings::FilledCircleColor);
+			}
+		}
+	}
+	if (USettings::ShowTarget) {
+		if (USettings::Head_Target || USettings::Body_Target) {
+			DWORD64 local = E->GetLocal();
+			DWORD64 ent = E->GetEnt(FindClosestEnemy());
+			if (local != NULL && ent != NULL) {
+				int health = E->GetHealth(local);
+				if (health > 0 && health < 101) {
+					DWORD64 sceneNode;
+					if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
+						DWORD64 BoneArray;
+						if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
+							float EnHealth = E->GetHealth(ent);
+							if (EnHealth > 0 || EnHealth < 101) {
+								float Distance = E->GetBonePos3D(BoneArray, 28).dist(E->GetPos(E->GetLocal())) / 100;
+								if (Distance < USettings::ESP_Distance) {
+									if (E->GetTeam(ent) != E->GetTeam(local)) {
+										Vector3 aimpos;
+										if (USettings::Head_Target)
+											aimpos = E->GetBonePos3D(BoneArray, bones::head);
+										if (USettings::Body_Target)
+											aimpos = E->GetBonePos3D(BoneArray, bones::spine);
+										aimpos.z -= 1.f;
+										Vector2 posscreen = PosToScreen(aimpos);
+										if (posscreen.dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov) {
+											DrawLine({ X_Screen / 2, Y_Screen / 2 }, posscreen, USettings::TargetColor, USettings::TargetThickness, true);
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -738,6 +863,9 @@ void mainLoop() {
 		renderImGui();
 		GetClients();
 		TriggerBot();
+		if (USettings::Aimbot) {
+			Aimbot(FindClosestEnemy());
+		}
 	}
 
 	ImGui_ImplDX9_Shutdown();

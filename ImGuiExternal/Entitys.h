@@ -23,4 +23,7 @@ public:
 	int GetMaxHealth(DWORD64 ent);
 	Vector2 GetBonePos(DWORD64 BoneAddr, int BoneId);
 	Vector3 GetBonePos3D(DWORD64 BoneAddr, int BoneId);
+	bool SetViewAngles(float Yaw, float Pitch);
+	Vector2 GetViewAnles();
+	Vector3 GetCameraPos();
 };

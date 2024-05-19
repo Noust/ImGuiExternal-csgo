@@ -20,11 +20,13 @@ void FManager::ReadSettings() {
         archivo.read(reinterpret_cast<char*>(&USettings::MenuWindow), sizeof(USettings::MenuWindow));
         archivo.read(reinterpret_cast<char*>(&USettings::triggerbot), sizeof(USettings::triggerbot));
         archivo.read(reinterpret_cast<char*>(&USettings::triggerbot_delayms), sizeof(USettings::triggerbot_delayms));
-        archivo.read(reinterpret_cast<char*>(&USettings::Silent_Aim), sizeof(USettings::Silent_Aim));
+        archivo.read(reinterpret_cast<char*>(&USettings::Aimbot), sizeof(USettings::Aimbot));
         archivo.read(reinterpret_cast<char*>(&USettings::Head_Target), sizeof(USettings::Head_Target));
         archivo.read(reinterpret_cast<char*>(&USettings::Body_Target), sizeof(USettings::Body_Target));
         archivo.read(reinterpret_cast<char*>(&USettings::ShowFov), sizeof(USettings::ShowFov));
-        archivo.read(reinterpret_cast<char*>(&USettings::AimbotFov), sizeof(USettings::AimbotFov));
+        archivo.read(reinterpret_cast<char*>(&USettings::AimFov), sizeof(USettings::AimFov));
+        archivo.read(reinterpret_cast<char*>(&USettings::Smooth), sizeof(USettings::Smooth));
+        archivo.read(reinterpret_cast<char*>(&USettings::HotKey), sizeof(USettings::HotKey));
         archivo.read(reinterpret_cast<char*>(&USettings::FovThickness), sizeof(USettings::FovThickness));
         archivo.read(reinterpret_cast<char*>(&USettings::FovColor), sizeof(USettings::FovColor));
         archivo.read(reinterpret_cast<char*>(&USettings::ShowTarget), sizeof(USettings::ShowTarget));
@@ -93,7 +95,6 @@ void FManager::ReadSettings() {
         archivo.read(reinterpret_cast<char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.read(reinterpret_cast<char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
         archivo.read(reinterpret_cast<char*>(&USettings::optionswindow_animation), sizeof(USettings::optionswindow_animation));
-        archivo.read(reinterpret_cast<char*>(&USettings::show_watermark), sizeof(USettings::show_watermark));
         archivo.close();
     }
 }
@@ -105,11 +106,13 @@ void FManager::SaveSettings() {
         archivo.write(reinterpret_cast<const char*>(&USettings::MenuWindow), sizeof(USettings::MenuWindow));
         archivo.write(reinterpret_cast<const char*>(&USettings::triggerbot), sizeof(USettings::triggerbot));
         archivo.write(reinterpret_cast<const char*>(&USettings::triggerbot_delayms), sizeof(USettings::triggerbot_delayms));
-        archivo.write(reinterpret_cast<const char*>(&USettings::Silent_Aim), sizeof(USettings::Silent_Aim));
+        archivo.write(reinterpret_cast<const char*>(&USettings::Aimbot), sizeof(USettings::Aimbot));
         archivo.write(reinterpret_cast<const char*>(&USettings::Head_Target), sizeof(USettings::Head_Target));
         archivo.write(reinterpret_cast<const char*>(&USettings::Body_Target), sizeof(USettings::Body_Target));
         archivo.write(reinterpret_cast<const char*>(&USettings::ShowFov), sizeof(USettings::ShowFov));
-        archivo.write(reinterpret_cast<const char*>(&USettings::AimbotFov), sizeof(USettings::AimbotFov));
+        archivo.write(reinterpret_cast<const char*>(&USettings::AimFov), sizeof(USettings::AimFov));
+        archivo.write(reinterpret_cast<const char*>(&USettings::Smooth), sizeof(USettings::Smooth));
+        archivo.write(reinterpret_cast<const char*>(&USettings::HotKey), sizeof(USettings::HotKey));
         archivo.write(reinterpret_cast<const char*>(&USettings::FovThickness), sizeof(USettings::FovThickness));
         archivo.write(reinterpret_cast<const char*>(&USettings::FovColor), sizeof(USettings::FovColor));
         archivo.write(reinterpret_cast<const char*>(&USettings::ShowTarget), sizeof(USettings::ShowTarget));
@@ -178,7 +181,6 @@ void FManager::SaveSettings() {
         archivo.write(reinterpret_cast<const char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.write(reinterpret_cast<const char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
         archivo.write(reinterpret_cast<const char*>(&USettings::optionswindow_animation), sizeof(USettings::optionswindow_animation));
-        archivo.write(reinterpret_cast<const char*>(&USettings::show_watermark), sizeof(USettings::show_watermark));
         archivo.close();
     }
 }

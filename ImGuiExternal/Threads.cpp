@@ -65,3 +65,36 @@ void TriggerBot() {
 		s->SimClick();
 	}
 }
+
+void Aimbot(int index) {
+	if (USettings::Aimbot) {
+		if (USettings::Head_Target || USettings::Body_Target) {
+			DWORD64 LocalPlayer = E->GetLocal();
+			if (LocalPlayer == NULL)
+				return;
+
+			int health = E->GetHealth(LocalPlayer);
+
+			if (health < 1 || health > 100)
+				return;
+
+			if (USettings::Aimbot && GetAsyncKeyState(USettings::HotKey)) {
+				DWORD64 CurrentPawn = E->GetEnt(index);
+				DWORD64 sceneNode; read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode);
+				if (sceneNode == NULL)
+					return;
+				DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+				if (BoneArray == NULL)
+					return;
+				Vector3 aimpos;
+				if (USettings::Head_Target)
+					aimpos = E->GetBonePos3D(BoneArray, bones::head);
+				if (USettings::Body_Target)
+					aimpos = E->GetBonePos3D(BoneArray, bones::spine);
+				aimpos.z -= 1.f;
+				if (PosToScreen(aimpos).dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov)
+					AimBot(LocalPlayer, E->GetCameraPos(), aimpos);
+			}
+		}
+	}
+}

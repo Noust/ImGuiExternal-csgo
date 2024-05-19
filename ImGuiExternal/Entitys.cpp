@@ -98,3 +98,26 @@ Vector3 Entitys::GetBonePos3D(DWORD64 BoneAddr, int BoneId) {
 	Vector3 BonePos; read<Vector3>(BoneAddr, BoneId * 32, BonePos);
 	return BonePos;
 }
+
+bool Entitys::SetViewAngles(float Yaw, float Pitch) {
+	Vector2 Angle{ Pitch,Yaw };
+
+	if (!ProcessMgr.WriteMemory<Vector2>(client + ClientDll::dwViewAngles, Angle))
+		return false;
+
+	return true;
+}
+
+Vector2 Entitys::GetViewAnles() {
+	Vector2 ViewAngles;
+	if (!read<Vector2>(client, ClientDll::dwViewAngles, ViewAngles))
+		return { 0,0 };
+	return ViewAngles;
+}
+
+Vector3 Entitys::GetCameraPos() {
+	Vector3 CameraPos;
+	if (!read<Vector3>(GetLocal(), C_CSPlayerPawnBase::m_vecLastClipCameraPos, CameraPos))
+		return { 0,0,0 };
+	return CameraPos;
+}

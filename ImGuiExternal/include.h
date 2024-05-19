@@ -24,6 +24,7 @@
 float X_Screen;
 float Y_Screen;
 DWORD64 client;
+#define M_PI       3.14159265358979323846   // pi
 
 #include "image.h"
 #include "Vector.h"
@@ -38,3 +39,4 @@ Entitys* E;
 #include "simulate.h"
 #include "Threads.h"
 #include "guns.h"
+#include "Aimbot.hpp"
