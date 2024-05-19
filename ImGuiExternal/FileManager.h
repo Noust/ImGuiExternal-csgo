@@ -1,9 +1,9 @@
 #pragma once
 #include "include.h"
 
-//class FManager {
-//public:
-//	USettings ReadSettings();
-//	void SaveSettings(USettings opciones);
-//};
-//FManager* F;
+class FManager {
+public:
+	void ReadSettings();
+	void SaveSettings();
+};
+FManager* F;

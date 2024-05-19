@@ -13,3 +13,9 @@ ImColor ArmorBarColor(DWORD64 ent);
 void DrawCircle(Vector2 pos, int radious, int thickness, ImColor color);
 void DrawCornerEsp(float W, float H, Vector2 pos, ImColor color, int thickness);
 void DrawBones(DWORD64 BoneAddr, int thickness, ImColor color);
+
+struct animator {
+	float alpha;
+	bool tick;
+	float speed;
+};

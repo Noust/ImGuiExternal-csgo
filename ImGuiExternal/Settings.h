@@ -79,8 +79,8 @@ namespace USettings {
 	ImColor Squad_FilledBox_Esp_Color = { 0,0,0,70 };
 	bool FilledBox_Esp = false;
 
-	ImColor Enemy_GunName_Color = { 255,0,0, };
-	ImColor Squad_GunName_Color = { 0,0,255, };
+	ImColor Enemy_GunName_Color = { 255,0,0 };
+	ImColor Squad_GunName_Color = { 0,0,255 };
 	bool GunName_Esp = false;
 
 	ImColor Enemy_Box3D_Esp_Color = { 255,0,0 };
@@ -103,4 +103,5 @@ namespace USettings {
 	bool window_animation = true;
 	bool navigationwindow_animation = false;
 	bool optionswindow_animation = false;
+	bool show_watermark = true;
 };

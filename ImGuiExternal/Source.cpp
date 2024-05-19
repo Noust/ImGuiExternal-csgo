@@ -1,5 +1,4 @@
 #include "include.h"
-
 bool createConsole = true;
 bool isInitialized = false;
 bool isMenuVisible = true;
@@ -14,6 +13,8 @@ bomb hack
 speed hack
 efectos de window
 esp detectar si se agacha*/
+
+IDirect3DTexture9* pTexture = nullptr;
 
 void Colors() {
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -84,6 +85,32 @@ void Colors() {
 
 }
 
+void animatecontent(animator& animator) {
+	const int limit = 255;
+	if (animator.tick || animator.alpha == limit) {
+		animator.tick = true;
+		if (!(animator.alpha <= 0))
+			animator.alpha -= animator.speed;
+		else if (animator.alpha <= 0)
+			animator.tick ^= 1;
+	}
+	else if (!animator.tick || animator.alpha != limit) {
+		animator.tick = false;
+		if (!(animator.alpha >= limit))
+			animator.alpha += animator.speed;
+		else if (animator.alpha >= limit)
+			animator.tick ^= 1;
+	}
+}
+
+template<class T>
+void centertext(const char* text, T value1, T value2) {
+	char texto[100];
+	sprintf_s(texto, sizeof(texto), text, value1, value2);
+	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(texto).x) / 2);
+	ImGui::Text(texto, value1, value2);
+}
+
 struct WindowInfo {
 	int Width;
 	int Height;
@@ -116,6 +143,7 @@ void renderImGui() {
 	if (!isInitialized) {
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
+		D3DXCreateTextureFromFileInMemory(pDevice, NOVA_LOGO, sizeof(NOVA_LOGO), &pTexture);
 
 		ImGui_ImplWin32_Init(overlayWindow);
 		ImGui_ImplDX9_Init(pDevice);
@@ -137,6 +165,8 @@ void renderImGui() {
 	if (isMenuVisible) {
 		inputHandler();
 		drawItem();
+		static animator Animator = { 255,false,0.5f };
+		animatecontent(Animator);
 		ImGui::Begin("CS Menu", 0, ImGuiWindowFlags_NoCollapse);
 		ImVec2 windowpos{ ImGui::GetWindowPos() };
 		ImVec2 windowsize{ ImGui::GetWindowSize() };
@@ -167,8 +197,13 @@ void renderImGui() {
 		}
 		ImGui::EndChild();
 		ImGui::BeginChild("##Bottom", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+		ImVec2 child_windowpos1{ ImGui::GetWindowPos() };
+		ImVec2 child_windowsize1{ ImGui::GetWindowSize() };
 		if (USettings::MenuWindow == 0) {
-
+			ImGui::SameLine((ImGui::GetContentRegionAvail().x / 2) - (200 / 2));
+			ImGui::Image((void*)pTexture, ImVec2(200, 170));
+			centertext<float>("CSGO 2 Menu by Nova", 0.0f, 0.0f);
+			centertext<float>("Window Size X:%0.f Y:%0.f", windowsize.x, windowsize.y);
 		}
 		else if (USettings::MenuWindow == 1) {
 
@@ -304,18 +339,29 @@ void renderImGui() {
 			ImGui::SliderInt("ESP Distance", &USettings::ESP_Distance, 0, 100);
 		}
 		else if (USettings::MenuWindow == 4) {
-			/*ImGui::Text("Settings Options");
+			ImGui::Text("Menu Animation Options");
+			ImGui::Checkbox("Window Animation", &USettings::window_animation);
+			ImGui::Checkbox("Navigation Window Animation", &USettings::navigationwindow_animation);
+			ImGui::Checkbox("Options Window Animation", &USettings::optionswindow_animation);
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+			ImGui::Text("Settings Options");
 			if (ImGui::Button("Save Current Settings")) {
-				F->SaveSettings(UserSettings);
+				F->SaveSettings();
 			}
 			if (ImGui::Button("Load Settings")) {
 				if (std::filesystem::exists("sarilla.bin"))
-					UserSettings = F->ReadSettings();
-			}*/
+					F->ReadSettings();
+			}
+			ImGui::Spacing();
+			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::Text("ESP Options");
 			ImGui::Checkbox("Show Team", &USettings::Show_Squad);
 			ImGui::Checkbox("Show Enemy", &USettings::Show_Enemy);
+			ImGui::Spacing();
+			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::Text("Feature Options");
 			if (ImGui::Button("Disable all")) {
@@ -398,7 +444,7 @@ void renderImGui() {
 				USettings::Squad_Bone_Esp_Color = { 0,0,255 };
 				USettings::Bone_Esp_Thickness = 0;
 				USettings::Bone_Esp = false;
-				Vector2 SnaplLine_Esp_Start_Point = { 1920 / 2,1080 };
+				USettings::SnaplLine_Esp_Start_Point = { 1920 / 2,1080 };
 				USettings::SnaplLine_Esp_End_Point = false;
 				USettings::Enemy_SnaplLine_Esp_Color = { 255,0,0 };
 				USettings::Squad_SnaplLine_Esp_Color = { 0,0,255 };
@@ -421,10 +467,19 @@ void renderImGui() {
 				USettings::window_animation = true;
 				USettings::navigationwindow_animation = false;
 				USettings::optionswindow_animation = false;
+				USettings::show_watermark = false;
 				USettings::GunName_Esp = false;
 			}
 		}
 		ImGui::EndChild();
+		if (USettings::window_animation)
+			ImGui::GetBackgroundDrawList()->AddRect({ windowpos.x - 1, windowpos.y - 1 }, { windowpos.x + windowsize.x + 1, windowpos.y + windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);//84, 171, 219
+		if (USettings::navigationwindow_animation)
+			ImGui::GetBackgroundDrawList()->AddRect({ child_windowpos.x - 1, child_windowpos.y - 1 }, { child_windowpos.x + child_windowsize.x + 1, child_windowpos.y + child_windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+		if (USettings::optionswindow_animation)
+			ImGui::GetBackgroundDrawList()->AddRect({ child_windowpos1.x - 1, child_windowpos1.y - 1 }, { child_windowpos1.x + child_windowsize1.x + 1, child_windowpos1.y + child_windowsize1.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+		if (USettings::show_watermark)
+			ImGui::GetBackgroundDrawList()->AddImage((void*)pTexture, ImVec2(1726, -10), ImVec2(1906, 170));
 		ImGui::End();
 		SetFocus(overlayWindow);
 	}
