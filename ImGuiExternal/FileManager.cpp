@@ -27,6 +27,9 @@ void FManager::ReadSettings() {
         archivo.read(reinterpret_cast<char*>(&USettings::AimFov), sizeof(USettings::AimFov));
         archivo.read(reinterpret_cast<char*>(&USettings::Smooth), sizeof(USettings::Smooth));
         archivo.read(reinterpret_cast<char*>(&USettings::HotKey), sizeof(USettings::HotKey));
+        archivo.read(reinterpret_cast<char*>(&USettings::AimBotHotKey), sizeof(USettings::AimBotHotKey));
+        archivo.read(reinterpret_cast<char*>(&USettings::TriggerHotKey), sizeof(USettings::TriggerHotKey));
+        archivo.read(reinterpret_cast<char*>(&USettings::THotKey), sizeof(USettings::THotKey));
         archivo.read(reinterpret_cast<char*>(&USettings::FovThickness), sizeof(USettings::FovThickness));
         archivo.read(reinterpret_cast<char*>(&USettings::FovColor), sizeof(USettings::FovColor));
         archivo.read(reinterpret_cast<char*>(&USettings::ShowTarget), sizeof(USettings::ShowTarget));
@@ -113,6 +116,9 @@ void FManager::SaveSettings() {
         archivo.write(reinterpret_cast<const char*>(&USettings::AimFov), sizeof(USettings::AimFov));
         archivo.write(reinterpret_cast<const char*>(&USettings::Smooth), sizeof(USettings::Smooth));
         archivo.write(reinterpret_cast<const char*>(&USettings::HotKey), sizeof(USettings::HotKey));
+        archivo.write(reinterpret_cast<const char*>(&USettings::AimBotHotKey), sizeof(USettings::AimBotHotKey));
+        archivo.write(reinterpret_cast<const char*>(&USettings::TriggerHotKey), sizeof(USettings::TriggerHotKey));
+        archivo.write(reinterpret_cast<const char*>(&USettings::THotKey), sizeof(USettings::THotKey));
         archivo.write(reinterpret_cast<const char*>(&USettings::FovThickness), sizeof(USettings::FovThickness));
         archivo.write(reinterpret_cast<const char*>(&USettings::FovColor), sizeof(USettings::FovColor));
         archivo.write(reinterpret_cast<const char*>(&USettings::ShowTarget), sizeof(USettings::ShowTarget));

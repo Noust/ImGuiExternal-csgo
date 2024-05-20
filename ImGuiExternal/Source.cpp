@@ -7,14 +7,13 @@ char names[16];
 
 /*checar el otro source y agregar cosas
 anti flash
-aimbot
 money services
 visibility check
 bomb hack
 speed hack
-efectos de window
 esp detectar si se agacha
-recoil control*/
+recoil control
+sking changer*/
 
 IDirect3DTexture9* pTexture = nullptr;
 
@@ -247,12 +246,18 @@ void renderImGui() {
 		else if (USettings::MenuWindow == 1) {
 			ImGui::Checkbox("trigger Bot", &USettings::triggerbot);
 			if (USettings::triggerbot) {
-				ImGui::SliderInt("triggerbot delay", &USettings::triggerbot_delayms, 0, 200);
+				if (ImGui::Combo("Trigger Key", &USettings::TriggerHotKey, "XBUTTON2\0MENU\0RBUTTON\0XBUTTON1\0LBUTTON\0CAPITAL\0SHIFT\0CONTROL")) {
+					USettings::TSetHotKey(USettings::TriggerHotKey);
+				}
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+				ImGui::SliderInt("Triggerbot Delay", &USettings::triggerbot_delayms, 0, 200);
 				ImGui::Separator();
 			}
 			ImGui::Checkbox("AimBot", &USettings::Aimbot);
 			if (USettings::Aimbot) {
-				if (ImGui::Combo("AimKey", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL")) {
+				if (ImGui::Combo("Aim Key", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL")) {
 					USettings::SetHotKey(USettings::AimBotHotKey);
 				}
 				ImGui::Spacing();
@@ -440,6 +445,8 @@ void renderImGui() {
 			ImGui::Text("Feature Options");
 			if (ImGui::Button("Disable all")) {
 				USettings::Aimbot = false;
+				USettings::triggerbot = false;
+				USettings::ArmorBar_ESP = false;
 				USettings::Head_Target = false;
 				USettings::Body_Target = true;
 				USettings::ShowFov = false;
@@ -462,6 +469,7 @@ void renderImGui() {
 				USettings::SnaplLine_Esp_End_Point = false;
 				USettings::SnaplLine_Esp = false;
 				USettings::FilledBox_Esp = false;
+				USettings::BunnyHop = false;
 				USettings::Box3D_Esp = false;
 				USettings::Night_Mode = false;
 				USettings::FullBright_Mode = false;
@@ -545,6 +553,10 @@ void renderImGui() {
 				USettings::optionswindow_animation = false;
 				USettings::show_watermark = false;
 				USettings::GunName_Esp = false;
+				USettings::HotKey = VK_LBUTTON;
+				USettings::THotKey = VK_XBUTTON2;
+				USettings::TriggerHotKey = 0;
+				USettings::AimBotHotKey = 0;
 			}
 		}
 		ImGui::EndChild();

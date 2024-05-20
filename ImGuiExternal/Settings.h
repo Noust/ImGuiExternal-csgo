@@ -7,6 +7,14 @@ namespace USettings {
 	//Gun
 	bool triggerbot = false;
 	int triggerbot_delayms = 1;
+	inline int TriggerHotKey = 0;
+	inline int THotKey = VK_XBUTTON2;
+	inline std::vector<int> THotKeyList{ VK_XBUTTON2, VK_LMENU, VK_RBUTTON, VK_XBUTTON1, VK_LBUTTON, VK_CAPITAL, VK_LSHIFT, VK_LCONTROL };// added new button VK_LBUTTON
+
+	inline void TSetHotKey(int Index)
+	{
+		THotKey = THotKeyList.at(Index);
+	}
 
 	bool Aimbot = false;
 	inline float AimFov = 200;
