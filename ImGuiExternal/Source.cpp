@@ -261,25 +261,21 @@ void renderImGui() {
 					USettings::SetHotKey(USettings::AimBotHotKey);
 				}
 				ImGui::Spacing();
-				ImGui::Separator();
 				ImGui::Spacing();
 				ImGui::SliderFloat("AimBot Smooth", &USettings::Smooth, 0, 0.7f);
 				ImGui::SliderFloat("AimBot Fov", &USettings::AimFov, 10, 1920);
-				ImGui::Separator();
 				ImGui::Checkbox("Head Target", &USettings::Head_Target);
 				if (USettings::Head_Target)
 					USettings::Body_Target = false;
 				ImGui::Checkbox("Body Target", &USettings::Body_Target);
 				if (USettings::Body_Target)
 					USettings::Head_Target = false;
-				ImGui::Separator();
 				ImGui::Checkbox("Show Fov", &USettings::ShowFov);
 				if (USettings::ShowFov) {
 					ImGui::SliderInt("Fov Thickness", &USettings::FovThickness, 0, 10);
 					ImGui::ColorEdit3("Fov Color", (float*)&USettings::FovColor);
 					ImGui::Checkbox("Filled Circle", &USettings::FilledCircle);
 					ImGui::ColorEdit3("Filled Circle Color", (float*)&USettings::FilledCircleColor);
-					ImGui::Separator();
 					ImGui::Spacing();
 					ImGui::Spacing();
 				}
@@ -556,6 +552,7 @@ void renderImGui() {
 				USettings::HotKey = VK_LBUTTON;
 				USettings::THotKey = VK_XBUTTON2;
 				USettings::TriggerHotKey = 0;
+				USettings::ArmorBar_ESP = false;
 				USettings::AimBotHotKey = 0;
 			}
 		}
@@ -750,19 +747,21 @@ void renderImGui() {
 			}
 		}
 	}
-	if (USettings::ShowFov || USettings::FilledCircle) {
-		DWORD64 local = E->GetLocal();
-		if (local != NULL) {
-			int health = E->GetHealth(local);
-			if (health > 0 && health < 101) {
-				if (USettings::ShowFov)
-					DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::AimFov, USettings::FovThickness, USettings::FovColor);
-				if (USettings::FilledCircle)
-					ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(X_Screen / 2, Y_Screen / 2), USettings::AimFov, USettings::FilledCircleColor);
+	if (USettings::Aimbot) {
+		if (USettings::ShowFov || USettings::FilledCircle) {
+			DWORD64 local = E->GetLocal();
+			if (local != NULL) {
+				int health = E->GetHealth(local);
+				if (health > 0 && health < 101) {
+					if (USettings::ShowFov)
+						DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::AimFov, USettings::FovThickness, USettings::FovColor);
+					if (USettings::FilledCircle)
+						ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(X_Screen / 2, Y_Screen / 2), USettings::AimFov, USettings::FilledCircleColor);
+				}
 			}
 		}
 	}
-	if (USettings::ShowTarget) {
+	if (USettings::ShowTarget && USettings::Aimbot) {
 		if (USettings::Head_Target || USettings::Body_Target) {
 			DWORD64 local = E->GetLocal();
 			DWORD64 ent = E->GetEnt(FindClosestEnemy());

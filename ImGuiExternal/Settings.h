@@ -20,7 +20,7 @@ namespace USettings {
 	inline float AimFov = 200;
 	inline float Smooth = 0.7;
 	inline int RCSBullet = 1;
-	inline Vector2 RCSScale = { 1.f,1.f };
+	inline Vector2 RCSScale = { 0.7f,0.58f };
 	bool Head_Target = true;
 	bool Body_Target = false;
 	bool ShowFov = false;

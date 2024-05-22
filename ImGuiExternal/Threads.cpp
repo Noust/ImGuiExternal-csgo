@@ -23,15 +23,7 @@ void GetClients() {
 		}
 		if (USettings::BunnyHop) {
 			int fFlag; read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag);
-			if (GetAsyncKeyState(VK_SPACE)) {
-				if (fFlag == STANDING || fFlag == CROUCHING) {
-					std::this_thread::sleep_for(std::chrono::milliseconds(19));
-					write<int>(client, ClientDll::dwForceJump, PLUS_JUMP);
-				}
-				else {
-					write<int>(client, ClientDll::dwForceJump, MINUS_JUMP);
-				}
-			}
+			E->bunnyHop(fFlag);
 		}
 	}
 }
@@ -39,7 +31,7 @@ void GetClients() {
 void TriggerBot() {
 	if (USettings::triggerbot) {
 
-		if (!GetAsyncKeyState(VK_XBUTTON2))
+		if (!GetAsyncKeyState(USettings::THotKey))
 			return;
 
 		DWORD64 LocalPlayer = E->GetLocal();

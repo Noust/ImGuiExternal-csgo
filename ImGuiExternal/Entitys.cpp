@@ -121,3 +121,13 @@ Vector3 Entitys::GetCameraPos() {
 		return { 0,0,0 };
 	return CameraPos;
 }
+
+void Entitys::bunnyHop(int flags) {
+	if (GetAsyncKeyState(VK_SPACE) && flags & bhopInAir) {
+		Sleep(14);
+		write<int>(client, ClientDll::dwForceJump, PLUS_JUMP);
+	}
+	else {
+		write<int>(client, ClientDll::dwForceJump, MINUS_JUMP);
+	}
+}

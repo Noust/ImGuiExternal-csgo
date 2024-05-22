@@ -26,4 +26,10 @@ public:
 	bool SetViewAngles(float Yaw, float Pitch);
 	Vector2 GetViewAnles();
 	Vector3 GetCameraPos();
+	void bunnyHop(int flags);
+};
+
+
+inline namespace sharedData {
+	inline int bhopInAir = (1 << 0);
 };
