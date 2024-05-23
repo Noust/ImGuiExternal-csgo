@@ -1,7 +1,7 @@
 #include "include.h"
 
 void GetClients() {
-	if (USettings::fov_changer || USettings::BunnyHop) {
+	if (USettings::fov_changer || USettings::BunnyHop || USettings::No_Flash) {
 		DWORD64 LocalPlayer = E->GetLocal();
 		if (LocalPlayer == NULL)
 			return;
@@ -24,6 +24,9 @@ void GetClients() {
 		if (USettings::BunnyHop) {
 			int fFlag; read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag);
 			E->bunnyHop(fFlag);
+		}
+		if (USettings::No_Flash) {
+			E->noFlash(LocalPlayer);
 		}
 	}
 }

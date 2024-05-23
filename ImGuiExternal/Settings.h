@@ -118,6 +118,7 @@ namespace USettings {
 
 	//Player
 	bool BunnyHop = false;
+	bool No_Flash= false;
 
 	//settings
 	bool window_animation = true;

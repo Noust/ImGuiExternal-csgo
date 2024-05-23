@@ -6,7 +6,6 @@ char distance[50];
 char names[16];
 
 /*checar el otro source y agregar cosas
-anti flash
 money services
 visibility check
 bomb hack
@@ -289,6 +288,7 @@ void renderImGui() {
 		}
 		else if (USettings::MenuWindow == 2) {
 			ImGui::Checkbox("Buny Hop", &USettings::BunnyHop);
+			ImGui::Checkbox("No Flash", &USettings::No_Flash);
 		}
 		else if (USettings::MenuWindow == 3) {
 			ImGui::Checkbox("Fov Changer", &USettings::fov_changer);
@@ -338,8 +338,8 @@ void renderImGui() {
 			}
 			ImGui::Checkbox("Bone Esp", &USettings::Bone_Esp);
 			if (USettings::Bone_Esp) {
-				ImGui::ColorEdit4("Bone Enemy Color", (float*)(&USettings::Enemy_Bone_Esp_Color));
-				ImGui::ColorEdit4("Bone Squad Color", (float*)(&USettings::Squad_Bone_Esp_Color));
+				ImGui::ColorEdit3("Bone Enemy Color", (float*)(&USettings::Enemy_Bone_Esp_Color));
+				ImGui::ColorEdit3("Bone Squad Color", (float*)(&USettings::Squad_Bone_Esp_Color));
 				ImGui::SliderInt("Bone thickness", &USettings::Bone_Esp_Thickness, 0, 10);
 				ImGui::Separator();
 			}
@@ -404,7 +404,7 @@ void renderImGui() {
 			ImGui::Checkbox("Draw Crosshair", &USettings::DrawCrosshair);
 			if (USettings::DrawCrosshair) {
 				ImGui::Checkbox("When not Aiming", &USettings::whennotaiming);
-				ImGui::ColorEdit4("Crosshair Color", (float*)(&USettings::Crosshair_Color));
+				ImGui::ColorEdit3("Crosshair Color", (float*)(&USettings::Crosshair_Color));
 				ImGui::SliderFloat("Crosshair size", &USettings::Crosshair_size, 1, 30);
 				ImGui::SliderInt("Crosshair Thickness", &USettings::Crosshair_thickness, 0, 10);
 				ImGui::Checkbox("Circle", &USettings::circle);

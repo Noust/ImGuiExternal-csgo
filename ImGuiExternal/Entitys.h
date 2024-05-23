@@ -27,6 +27,7 @@ public:
 	Vector2 GetViewAnles();
 	Vector3 GetCameraPos();
 	void bunnyHop(int flags);
+	void noFlash(DWORD64 ent);
 };
 
 

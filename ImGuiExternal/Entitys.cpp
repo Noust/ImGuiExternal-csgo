@@ -131,3 +131,13 @@ void Entitys::bunnyHop(int flags) {
 		write<int>(client, ClientDll::dwForceJump, MINUS_JUMP);
 	}
 }
+
+void Entitys::noFlash(DWORD64 ent) {
+	float flash = 0.f;
+	float flashtime; 
+	if (!read<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flashtime))
+		return;
+	if (flashtime > 0) {
+		write<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flash);
+	}
+}

@@ -98,6 +98,7 @@ void FManager::ReadSettings() {
         archivo.read(reinterpret_cast<char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.read(reinterpret_cast<char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
         archivo.read(reinterpret_cast<char*>(&USettings::optionswindow_animation), sizeof(USettings::optionswindow_animation));
+        archivo.read(reinterpret_cast<char*>(&USettings::No_Flash), sizeof(USettings::No_Flash));
         archivo.close();
     }
 }
@@ -187,6 +188,7 @@ void FManager::SaveSettings() {
         archivo.write(reinterpret_cast<const char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.write(reinterpret_cast<const char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
         archivo.write(reinterpret_cast<const char*>(&USettings::optionswindow_animation), sizeof(USettings::optionswindow_animation));
+        archivo.write(reinterpret_cast<const char*>(&USettings::No_Flash), sizeof(USettings::No_Flash));
         archivo.close();
     }
 }
