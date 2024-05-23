@@ -90,6 +90,7 @@ void Aimbot(int index) {
 				if (PosToScreen(aimpos).dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov)
 					AimBot(LocalPlayer, E->GetCameraPos(), aimpos);
 			}
+			setRCS();
 		}
 	}
 }

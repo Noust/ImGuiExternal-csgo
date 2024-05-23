@@ -8,6 +8,7 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos)
 	float Yaw, Pitch;
 	float Distance, Norm;
 	Vector3 OppPos;
+	Vector3 Angles;
 
 	OppPos = AimPos - LocalPos;
 
@@ -38,6 +39,10 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos)
 			Pitch = Pitch - PunchAngle.x * USettings::RCSScale.y;
 		}
 	}
+	Angles = clampAngles({ Pitch,Yaw });
+	E->SetViewAngles(Angles.y, Angles.x);
+}
 
-	E->SetViewAngles(Yaw, Pitch);
+void setRCS() {
+	USettings::RCSScale = { 0.7f + (0.7f - USettings::Smooth) * 2,0.58f + (0.7f - USettings::Smooth) * 2 };
 }

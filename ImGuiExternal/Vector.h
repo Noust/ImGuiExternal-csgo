@@ -102,3 +102,28 @@ struct C_UTL_VECTOR
 	DWORD64 Count = 0;
 	DWORD64 Data = 0;
 };
+
+inline Vector3 clampAngles(Vector3 angles) {
+	if (angles.x > 89.0f && angles.x <= 180.0f) {
+		angles.x = 89.0f;
+	}
+
+	if (angles.x > 180.0f) {
+		angles.x -= 360.0f;
+	}
+
+	if (angles.x < -89.0f) {
+		angles.x = -89.0f;
+	}
+
+	if (angles.y > 180.0f) {
+		angles.y -= 360.0f;
+	}
+
+	if (angles.y < -180.0f) {
+		angles.y += 360.0f;
+	}
+	angles.z = 0;
+
+	return angles;
+};
