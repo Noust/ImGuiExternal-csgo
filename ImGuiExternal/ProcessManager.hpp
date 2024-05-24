@@ -1,7 +1,7 @@
 #pragma once
 #include "include.h"
-#define _is_invalid(v) if(v==NULL) return false
-#define _is_invalid(v,n) if(v==NULL) return n
+#define _is_invalid_ptr(v, ret) do { if((v) == NULL) return (ret); } while(0)
+#define _is_invalid_val(v, val, ret) do { if((v) == (val)) return (ret); } while(0)
 
 
 enum StatusCode
@@ -33,13 +33,13 @@ public:
 	StatusCode Attach(std::string ProcessName)
 	{
 		ProcessID = this->GetProcessID(ProcessName);
-		_is_invalid(ProcessID, FAILE_PROCESSID);
+		_is_invalid_val(ProcessID, 0, FAILE_PROCESSID);
 
 		hProcess = OpenProcess(PROCESS_ALL_ACCESS | PROCESS_CREATE_THREAD, TRUE, ProcessID);
-		_is_invalid(hProcess, FAILE_HPROCESS);
+		_is_invalid_ptr(hProcess, FAILE_HPROCESS);
 
 		ModuleAddress = reinterpret_cast<DWORD64>(this->GetProcessModuleHandle(ProcessName));
-		_is_invalid(ModuleAddress, FAILE_MODULE);
+		_is_invalid_val(ModuleAddress, 0, FAILE_MODULE);
 
 		Attached = true;
 
@@ -71,8 +71,8 @@ public:
 	template <typename ReadType>
 	bool ReadMemory(DWORD64 Address, ReadType& Value, int Size)
 	{
-		_is_invalid(hProcess, false);
-		_is_invalid(ProcessID, false);
+		_is_invalid_ptr(hProcess, false);
+		_is_invalid_val(ProcessID, 0, false);
 
 		if (ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, Size, 0))
 			return true;
@@ -82,8 +82,8 @@ public:
 	template <typename ReadType>
 	bool ReadMemory(DWORD64 Address, ReadType& Value)
 	{
-		_is_invalid(hProcess, false);
-		_is_invalid(ProcessID, false);
+		_is_invalid_ptr(hProcess, false);
+		_is_invalid_val(ProcessID, 0, false);
 
 		if (ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, sizeof(ReadType), 0))
 			return true;
@@ -94,8 +94,8 @@ public:
 	template <typename ReadType>
 	bool WriteMemory(DWORD64 Address, ReadType& Value, int Size)
 	{
-		_is_invalid(hProcess, false);
-		_is_invalid(ProcessID, false);
+		_is_invalid_ptr(hProcess, false);
+		_is_invalid_val(ProcessID, 0, false);
 
 		if (WriteProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, Size, 0))
 			return true;
@@ -105,8 +105,8 @@ public:
 	template <typename ReadType>
 	bool WriteMemory(DWORD64 Address, ReadType& Value)
 	{
-		_is_invalid(hProcess, false);
-		_is_invalid(ProcessID, false);
+		_is_invalid_ptr(hProcess, false);
+		_is_invalid_val(ProcessID, 0, false);
 
 		if (WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(Address), &Value, sizeof(ReadType), 0))
 			return true;
@@ -118,8 +118,8 @@ public:
 
 	DWORD64 TraceAddress(DWORD64 BaseAddress, std::vector<DWORD> Offsets)
 	{
-		_is_invalid(hProcess, 0);
-		_is_invalid(ProcessID, 0);
+		_is_invalid_ptr(hProcess, 0);
+		_is_invalid_val(ProcessID, 0, 0);
 		DWORD64 Address = 0;
 
 		if (Offsets.size() == 0)

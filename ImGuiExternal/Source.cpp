@@ -17,7 +17,7 @@ sking changer*/
 IDirect3DTexture9* pTexture = nullptr;
 
 int FindClosestEnemy() {
-	int ClosestEntity = 0;
+	int ClosestEntity = 100;
 	DWORD64 LocalPlayer = E->GetLocal();
 	if (LocalPlayer != NULL) {
 		if (E->GetHealth(E->GetLocal()) > 0 && E->GetHealth(E->GetLocal()) < 101) {
@@ -40,8 +40,17 @@ int FindClosestEnemy() {
 						continue;
 					if (E->GetTeam(EntityAddr) == E->GetTeam(E->GetLocal()))
 						continue;
-					Vector2 PosScreen = E->GetBonePos(BoneArray, bones::neck);
-					Finish = PosScreen.dist({ X_Screen / 2, Y_Screen / 2 });
+					Vector3 aimpos;
+					if (USettings::Head_Target)
+						aimpos = E->GetBonePos3D(BoneArray, bones::head);
+					if (USettings::Body_Target)
+						aimpos = E->GetBonePos3D(BoneArray, bones::spine);
+					aimpos.z -= 1.f;
+					Vector2 posscreen = PosToScreen(aimpos);
+					if (posscreen.dist({ X_Screen / 2,Y_Screen / 2 }) > USettings::AimFov)
+						continue;
+
+					Finish = posscreen.dist({ X_Screen / 2, Y_Screen / 2 });
 					if (Finish < Closest) {
 						Closest = Finish;
 						ClosestEntity = i;
@@ -762,35 +771,22 @@ void renderImGui() {
 		}
 	}
 	if (USettings::ShowTarget && USettings::Aimbot) {
-		if (USettings::Head_Target || USettings::Body_Target) {
-			DWORD64 local = E->GetLocal();
+		int i = FindClosestEnemy();
+		if (i != 100) {
 			DWORD64 ent = E->GetEnt(FindClosestEnemy());
-			if (local != NULL && ent != NULL) {
-				int health = E->GetHealth(local);
-				if (health > 0 && health < 101) {
-					DWORD64 sceneNode;
-					if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
-						DWORD64 BoneArray;
-						if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
-							float EnHealth = E->GetHealth(ent);
-							if (EnHealth > 0 || EnHealth < 101) {
-								float Distance = E->GetBonePos3D(BoneArray, 28).dist(E->GetPos(E->GetLocal())) / 100;
-								if (Distance < USettings::ESP_Distance) {
-									if (E->GetTeam(ent) != E->GetTeam(local)) {
-										Vector3 aimpos;
-										if (USettings::Head_Target)
-											aimpos = E->GetBonePos3D(BoneArray, bones::head);
-										if (USettings::Body_Target)
-											aimpos = E->GetBonePos3D(BoneArray, bones::spine);
-										aimpos.z -= 1.f;
-										Vector2 posscreen = PosToScreen(aimpos);
-										if (posscreen.dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov) {
-											DrawLine({ X_Screen / 2, Y_Screen / 2 }, posscreen, USettings::TargetColor, USettings::TargetThickness, true);
-										}
-									}
-								}
-							}
-						}
+			if (ent != NULL) {
+				DWORD64 sceneNode;
+				if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
+					DWORD64 BoneArray;
+					if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
+						Vector3 aimpos;
+						if (USettings::Head_Target)
+							aimpos = E->GetBonePos3D(BoneArray, bones::head);
+						if (USettings::Body_Target)
+							aimpos = E->GetBonePos3D(BoneArray, bones::spine);
+						aimpos.z -= 1.f;
+						Vector2 posscreen = PosToScreen(aimpos);
+						DrawLine({ X_Screen / 2, Y_Screen / 2 }, posscreen, USettings::TargetColor, USettings::TargetThickness, true);
 					}
 				}
 			}
@@ -875,6 +871,9 @@ void mainLoop() {
 		GetClients();
 		TriggerBot();
 		if (USettings::Aimbot) {
+			int i = FindClosestEnemy();
+			if (i == 100)
+				continue;
 			Aimbot(FindClosestEnemy());
 		}
 	}

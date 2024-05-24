@@ -125,10 +125,10 @@ Vector3 Entitys::GetCameraPos() {
 void Entitys::bunnyHop(int flags) {
 	if (GetAsyncKeyState(VK_SPACE) && flags & bhopInAir) {
 		Sleep(14);
-		write<int>(client, ClientDll::dwForceJump, PLUS_JUMP);
+		write<int>(client, Buttons::jump, PLUS_JUMP);
 	}
 	else {
-		write<int>(client, ClientDll::dwForceJump, MINUS_JUMP);
+		write<int>(client, Buttons::jump, MINUS_JUMP);
 	}
 }
 
