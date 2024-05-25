@@ -307,25 +307,22 @@ void renderImGui() {
 			ImGui::Checkbox("Money Manager", &USettings::MoneyServices);
 			if (USettings::MoneyServices) {
 				for (int i = 0; i < 64; i++) {
-					int health = E->GetHealth(E->GetEnt(i));
-					if (health > 0 && health < 101) {
-						DWORD64 CurrentController = E->GetEntInfo(i);
-						if (CurrentController != NULL) {
-							DWORD64 moneyservices; read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices);
-							if (moneyservices != NULL) {
-								if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
-									int account;
-									if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
-										int cashSpent;
-										if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
-											int cashSpentTotal;
-											if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
-												if (ImGui::TreeNode(name)) {
-													ImGui::TextColored(ImColor(255, 255, 255), "Account: %d", account);
-													ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent this round: %d", cashSpent);
-													ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent total: %d", cashSpentTotal);
-													ImGui::TreePop();
-												}
+					DWORD64 CurrentController = E->GetEntInfo(i);
+					if (CurrentController != NULL) {
+						DWORD64 moneyservices; read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices);
+						if (moneyservices != NULL) {
+							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
+								int account;
+								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
+									int cashSpent;
+									if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
+										int cashSpentTotal;
+										if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
+											if (ImGui::TreeNode(name)) {
+												ImGui::TextColored(ImColor(255, 255, 255), "Account: %d", account);
+												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent this round: %d", cashSpent);
+												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent total: %d", cashSpentTotal);
+												ImGui::TreePop();
 											}
 										}
 									}
