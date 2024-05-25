@@ -60,7 +60,7 @@ void DrawFilledRect(Vector2 pos, float height, float width, ImColor color) {
 	ImGui::GetBackgroundDrawList()->AddRectFilled({ pos.x - width,pos.y - height }, { pos.x + width, pos.y }, color);
 }
 
-void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width) {
+void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width, int fFlags) {
 	Vector3 pos1 = E->GetPos(Ents);
 	Vector3 pos2 = E->GetPos(Ents);
 	Vector3 pos3 = E->GetPos(Ents);
@@ -83,16 +83,25 @@ void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width) {
 	//Top Points
 	pos5.x += width;
 	pos5.y += width;
-	pos5.z += 70;
 	pos6.x += width;
 	pos6.y -= width;
-	pos6.z += 70;
 	pos7.x -= width;
 	pos7.y -= width;
-	pos7.z += 70;
 	pos8.x -= width;
 	pos8.y += width;
-	pos8.z += 70;
+
+	if (fFlags == CROUCHING) {
+		pos8.z += 55;
+		pos5.z += 55;
+		pos6.z += 55;
+		pos7.z += 55;
+	}
+	else {
+		pos8.z += 70;
+		pos5.z += 70;
+		pos6.z += 70;
+		pos7.z += 70;
+	}
 
 	//to screen
 	Vector2 posscreen1 = PosToScreen(pos1);

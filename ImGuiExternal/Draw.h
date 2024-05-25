@@ -7,7 +7,7 @@ void DrawString(Vector2 pos, ImColor color, float divide, const char* text);
 void drawhealthbar(Vector2 pos, float height, float width, ImColor color, float thickness);
 void drawarmorbar(Vector2 pos, float height, float width, ImColor color, float thickness);
 void DrawFilledRect(Vector2 pos, float height, float width, ImColor color);
-void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width);
+void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width, int fFlags);
 ImColor HealthBarColor(DWORD64 ent);
 ImColor ArmorBarColor(DWORD64 ent);
 void DrawCircle(Vector2 pos, int radious, int thickness, ImColor color);
