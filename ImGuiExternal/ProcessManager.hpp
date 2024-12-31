@@ -1,203 +1,169 @@
 #pragma once
 #include "include.h"
-#define _is_invalid_ptr(v, ret) do { if((v) == NULL) return (ret); } while(0)
-#define _is_invalid_val(v, val, ret) do { if((v) == (val)) return (ret); } while(0)
+HANDLE process = nullptr;
+bool handleInitialized = false;
 
 
-enum StatusCode
-{
-	SUCCEED,
-	FAILE_PROCESSID,
-	FAILE_HPROCESS,
-	FAILE_MODULE,
-};
+#ifndef NT_SUCCESS
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#endif
 
 
-class ProcessManager
-{
-private:
+bool initializeProcessHandle() {
+	// Ofuscaci�n del nombre de la funci�n
+	static const auto getNtStatus = []() -> DWORD {
+		return static_cast<DWORD>(__rdtsc() & 0xFFFFFFFF);
+		};
 
-	bool   Attached = false;
-
-public:
-
-	HANDLE hProcess = 0;
-	DWORD  ProcessID = 0;
-	DWORD64  ModuleAddress = 0;
-
-public:
-	~ProcessManager()
-	{
-
-	}
-	StatusCode Attach(std::string ProcessName)
-	{
-		ProcessID = this->GetProcessID(ProcessName);
-		_is_invalid_val(ProcessID, 0, FAILE_PROCESSID);
-
-		hProcess = OpenProcess(PROCESS_ALL_ACCESS | PROCESS_CREATE_THREAD, TRUE, ProcessID);
-		_is_invalid_ptr(hProcess, FAILE_HPROCESS);
-
-		ModuleAddress = reinterpret_cast<DWORD64>(this->GetProcessModuleHandle(ProcessName));
-		_is_invalid_val(ModuleAddress, 0, FAILE_MODULE);
-
-		Attached = true;
-
-		return SUCCEED;
+	// Obtener PID con retraso aleatorio y ofuscaci�n
+	DWORD processId = 0;
+	for (int i = 0; i < 3; i++) {
+		Sleep((getNtStatus() & 0x7F) + 10);
+		processId = getProcessID(targetProcessName);
+		if (processId != 0) break;
 	}
 
+	if (processId == 0) return false;
 
-	void Detach()
-	{
-		if (hProcess)
-			CloseHandle(hProcess);
-		hProcess = 0;
-		ProcessID = 0;
-		ModuleAddress = 0;
-		Attached = false;
-	}
+	// Accesos aleatorios y din�micos
+	const DWORD baseAccess = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
+	const DWORD accessMasks[] = {
+		baseAccess | ((getNtStatus() & 1) ? PROCESS_VM_WRITE : 0),
+		baseAccess | ((getNtStatus() & 1) ? PROCESS_VM_OPERATION : 0),
+		PROCESS_ALL_ACCESS & ~((getNtStatus() & 1) ? PROCESS_CREATE_THREAD : 0)
+	};
 
+	// M�ltiples intentos con patrones aleatorios
+	for (int attempt = 0; attempt < 3; attempt++) {
+		for (const DWORD access : accessMasks) {
+			if (getNtStatus() & 1) Sleep(getNtStatus() & 0x3F);
 
-	bool IsActive()
-	{
-		if (!Attached)
-			return false;
-		DWORD ExitCode{};
-		GetExitCodeProcess(hProcess, &ExitCode);
-		return ExitCode == STILL_ACTIVE;
-	}
+			HANDLE temp = nullptr;
+			try {
+				temp = OpenProcess(access, FALSE, processId);
+			}
+			catch (...) {
+				continue;
+			}
 
+			if (temp && temp != INVALID_HANDLE_VALUE) {
+				DWORD exitCode = 0;
+				if (GetExitCodeProcess(temp, &exitCode) && exitCode == STILL_ACTIVE) {
+					// Verificaciones adicionales ofuscadas
+					BOOL sysInfo = FALSE;
+					if ((getNtStatus() & 3) == 0) {
+						Sleep(1);  // Timing aleatorio
+					}
 
-	template <typename ReadType>
-	bool ReadMemory(DWORD64 Address, ReadType& Value, int Size)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-
-		if (ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, Size, 0))
-			return true;
-		return false;
-	}
-
-	template <typename ReadType>
-	bool ReadMemory(DWORD64 Address, ReadType& Value)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-
-		if (ReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, sizeof(ReadType), 0))
-			return true;
-		return false;
-	}
-
-
-	template <typename ReadType>
-	bool WriteMemory(DWORD64 Address, ReadType& Value, int Size)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-
-		if (WriteProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, Size, 0))
-			return true;
-		return false;
-	}
-
-	template <typename ReadType>
-	bool WriteMemory(DWORD64 Address, ReadType& Value)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-
-		if (WriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(Address), &Value, sizeof(ReadType), 0))
-			return true;
-		return false;
-	}
-
-
-	std::vector<DWORD64> SearchMemory(const std::string& Signature, DWORD64 StartAddress, DWORD64 EndAddress, int SearchNum = 1);
-
-	DWORD64 TraceAddress(DWORD64 BaseAddress, std::vector<DWORD> Offsets)
-	{
-		_is_invalid_ptr(hProcess, 0);
-		_is_invalid_val(ProcessID, 0, 0);
-		DWORD64 Address = 0;
-
-		if (Offsets.size() == 0)
-			return BaseAddress;
-
-		if (!ReadMemory<DWORD64>(BaseAddress, Address))
-			return 0;
-
-		for (int i = 0; i < Offsets.size() - 1; i++)
-		{
-			if (!ReadMemory<DWORD64>(Address + Offsets[i], Address))
-				return 0;
+					if (IsWow64Process(temp, &sysInfo)) {
+						process = temp;
+						handleInitialized = (getNtStatus() & 0xFF) != 0;
+						return true;
+					}
+				}
+				CloseHandle(temp);
+			}
 		}
-		return Address == 0 ? 0 : Address + Offsets[Offsets.size() - 1];
 	}
 
-public:
-
-	DWORD GetProcessID(std::string ProcessName)
-	{
-		PROCESSENTRY32 ProcessInfoPE;
-		ProcessInfoPE.dwSize = sizeof(PROCESSENTRY32);
-		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-		Process32First(hSnapshot, &ProcessInfoPE);
-		do {
-			if (strcmp(ProcessInfoPE.szExeFile, ProcessName.c_str()) == 0)
-			{
-				CloseHandle(hSnapshot);
-				return ProcessInfoPE.th32ProcessID;
-			}
-		} while (Process32Next(hSnapshot, &ProcessInfoPE));
-		CloseHandle(hSnapshot);
-		return 0;
-	}
-
-	HMODULE GetProcessModuleHandle(std::string ModuleName)
-	{
-		MODULEENTRY32 ModuleInfoPE;
-		ModuleInfoPE.dwSize = sizeof(MODULEENTRY32);
-		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->ProcessID);
-		Module32First(hSnapshot, &ModuleInfoPE);
-		do {
-			if (strcmp(ModuleInfoPE.szModule, ModuleName.c_str()) == 0)
-			{
-				CloseHandle(hSnapshot);
-				return ModuleInfoPE.hModule;
-			}
-		} while (Module32Next(hSnapshot, &ModuleInfoPE));
-		CloseHandle(hSnapshot);
-		return 0;
-	}
-
-};
-
-inline ProcessManager ProcessMgr;
-
-template <typename T>
-inline bool read(const DWORD64& Address, DWORD Offset, T& Data)
-{
-	if (Address == 0)
-		return false;
-
-	if (!ProcessMgr.ReadMemory<T>(Address + Offset, Data))
-		return false;
-
-	return true;
+	return false;
 }
 
-template <typename T>
-inline bool write(const DWORD64& Address, DWORD Offset, T& Data)
-{
-	if (Address == 0)
-		return false;
+template<typename T>
+bool read(DWORD64 address, T& value) {
+	if (!handleInitialized) {
+		if (!handleInitialized) {
+			printf("[ERROR] Failed to initialize process handle\n");
+			return false;
+		}
+	}
+	try {
+		// Rotaci�n din�mica de funciones
+		static const auto getRandom = [address]() -> DWORD64 {
+			return __rdtsc() ^ ((DWORD64)(&address) * 0x1337);
+			};
 
-	if (!ProcessMgr.WriteMemory<T>(Address + Offset, Data))
-		return false;
+		// Ofuscaci�n del nombre del m�dulo
+		static const wchar_t* modName = (getRandom() & 1) ?
+			L"\x6E\x74\x64\x6C\x6C\x2E\x64\x6C\x6C" : // "ntdll.dll" encoded
+			L"ntdll.dll";
 
-	return true;
+		// Obtenci�n din�mica del handle
+		static const auto ntdll = GetModuleHandleW(modName);
+		if (!ntdll) {
+			printf("[ERROR] Failed to get ntdll handle\n");
+			return false;
+		}
+
+		// Obtenci�n de la funci�n con reintentos
+		static auto NtReadVM = reinterpret_cast<NTSTATUS(NTAPI*)(
+			HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T)>(
+				GetProcAddress(ntdll, "NtReadVirtualMemory"));
+
+		// Si no se obtuvo, reintentamos hasta 3 veces
+		int retryCount = 0;
+		while (!NtReadVM && retryCount < 10) {
+			Sleep(50); // Peque�a pausa entre intentos
+			NtReadVM = reinterpret_cast<NTSTATUS(NTAPI*)(
+				HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T)>(
+					GetProcAddress(ntdll, "NtReadVirtualMemory"));
+			retryCount++;
+		}
+
+		// Si despu�s de los reintentos sigue sin obtenerse
+		if (!NtReadVM) {
+			printf("[ERROR] Failed to get NtReadVirtualMemory function\n");
+			return false;
+		}
+
+		T buffer;
+		SIZE_T bytesRead = 0;
+
+		// Lecturas se�uelo aleatorias
+		if (getRandom() & 3) {
+			const auto fakeOffset = getRandom() & 0xFFFF;
+			volatile T dummy;
+			for (int i = 0; i < (getRandom() & 7); i++) {
+				if (getRandom() & 1) {
+					Sleep((getRandom() & 3) + 1);
+					NtReadVM(process, (PVOID)(address + fakeOffset),
+						(PVOID)&dummy, sizeof(T), nullptr);
+				}
+			}
+		}
+
+		// Timing aleatorio entre operaciones
+		if (getRandom() & 1) {
+			Sleep((getRandom() & 1) + 1);
+		}
+
+		// Lectura real con verificaci�n de integridad
+		const auto status = NtReadVM(process, (PVOID)address, &buffer,
+			sizeof(T), &bytesRead);
+
+		// Verificaci�n con ruido
+		const bool success = NT_SUCCESS(status) &&
+			bytesRead == sizeof(T) &&
+			(getRandom() % 100 > 5);
+
+		if (success) {
+			value = buffer;
+			return true;
+		}
+
+		if (!NT_SUCCESS(status)) {
+			printf("[ERROR] NtReadVirtualMemory failed with status: 0x%X\n", status);
+		}
+		if (bytesRead != sizeof(T)) {
+			printf("[ERROR] Incomplete read: got %zu bytes, expected %zu\n", bytesRead, sizeof(T));
+		}
+
+		return false;
+	}
+	catch (...) {
+		printf("[ERROR] Unhandled exception in ReadMemoryQuiet\n");
+		return false;
+	}
 }
 
 #define GetHandle(name) reinterpret_cast<DWORD64>(ProcessMgr.GetProcessModuleHandle(name));

@@ -22,14 +22,14 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos)
 	Pitch = Pitch * (1 - USettings::Smooth) + E->GetViewAnles().x;
 
 	// Recoil control
-	if (!read<int>(local, C_CSPlayerPawn::m_iShotsFired, ShotsFired))
+	if (!read<int>(local + C_CSPlayerPawn::m_iShotsFired, ShotsFired))
 		return;
 
 	if (ShotsFired > USettings::RCSBullet)
 	{
 		Vector2 PunchAngle;
 		C_UTL_VECTOR AimPunchCache;
-		if (read<C_UTL_VECTOR>(local, C_CSPlayerPawn::m_aimPunchCache, AimPunchCache)) {
+		if (read<C_UTL_VECTOR>(local + C_CSPlayerPawn::m_aimPunchCache, AimPunchCache)) {
 			if (AimPunchCache.Count <= 0 && AimPunchCache.Count > 0xFFFF)
 				return;
 			if (!ProcessMgr.ReadMemory<Vector2>(AimPunchCache.Data + (AimPunchCache.Count - 1) * sizeof(Vector3), PunchAngle))

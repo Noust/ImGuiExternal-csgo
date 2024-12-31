@@ -12,17 +12,17 @@ void GetClients() {
 			return;
 
 		DWORD64 CameraServices;
-		if (!read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices))
+		if (!read<DWORD64>(LocalPlayer + C_BasePlayerPawn::m_pCameraServices, CameraServices))
 			return;
 		if (USettings::fov_changer) {
-			int currentfov; read<int>(CameraServices, CCSPlayerBase_CameraServices::m_iFOV, currentfov);
-			bool isscoped; read<bool>(LocalPlayer, C_CSPlayerPawn::m_bIsScoped, isscoped);
+			int currentfov; read<int>(CameraServices + CCSPlayerBase_CameraServices::m_iFOV, currentfov);
+			bool isscoped; read<bool>(LocalPlayer + C_CSPlayerPawn::m_bIsScoped, isscoped);
 			if (!isscoped && currentfov != USettings::fov_value) {
-				write<int>(CameraServices, CCSPlayerBase_CameraServices::m_iFOV, USettings::fov_value);
+				write<int>(CameraServices + CCSPlayerBase_CameraServices::m_iFOV, USettings::fov_value);
 			}
 		}
 		if (USettings::BunnyHop) {
-			int fFlag; read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag);
+			int fFlag; read<int>(LocalPlayer + C_BaseEntity::m_fFlags, fFlag);
 			E->bunnyHop(fFlag);
 		}
 		if (USettings::No_Flash) {
@@ -40,7 +40,7 @@ void TriggerBot() {
 		DWORD64 LocalPlayer = E->GetLocal();
 
 		int team = E->GetTeam(LocalPlayer);
-		int entindex; read<int>(LocalPlayer, C_CSPlayerPawnBase::m_iIDEntIndex, entindex);
+		int entindex; read<int>(LocalPlayer + C_CSPlayerPawnBase::m_iIDEntIndex, entindex);
 
 		if (entindex == -1)
 			return;
@@ -75,10 +75,10 @@ void Aimbot(int index) {
 
 			if (USettings::Aimbot && GetAsyncKeyState(USettings::HotKey)) {
 				DWORD64 CurrentPawn = E->GetEnt(index);
-				DWORD64 sceneNode; read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode);
+				DWORD64 sceneNode; read<DWORD64>(CurrentPawn + C_BaseEntity::m_pGameSceneNode, sceneNode);
 				if (sceneNode == NULL)
 					return;
-				DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+				DWORD64 BoneArray; read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray);
 				if (BoneArray == NULL)
 					return;
 				Vector3 aimpos;

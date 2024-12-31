@@ -21,6 +21,8 @@
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "D3dx9")
+
+std::string targetProcessName = "cs2.exe";
 float X_Screen;
 float Y_Screen;
 DWORD64 client;

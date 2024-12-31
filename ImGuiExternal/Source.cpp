@@ -25,10 +25,10 @@ int FindClosestEnemy() {
 			for (int i = 0; i < 64; i++) {
 				DWORD64 EntityAddr = E->GetEnt(i);
 				if (EntityAddr != 0) {
-					DWORD64 sceneNode; read<DWORD64>(EntityAddr, C_BaseEntity::m_pGameSceneNode, sceneNode);
+					DWORD64 sceneNode; read<DWORD64>(EntityAddr + C_BaseEntity::m_pGameSceneNode, sceneNode);
 					if (sceneNode == NULL)
 						continue;
-					DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+					DWORD64 BoneArray; read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray);
 					if (BoneArray == NULL)
 						continue;
 					float EnHealth = E->GetHealth(EntityAddr); 
@@ -170,7 +170,6 @@ WNDCLASSEX windowClass;
 HWND targetWindow;
 HWND overlayWindow;
 
-std::string targetProcessName = "cs2.exe";
 std::string ovarlayName = generateRandomString(generateRandomInt(30, 100));
 
 IDirect3DDevice9Ex* pDevice = nullptr;
@@ -309,15 +308,15 @@ void renderImGui() {
 				for (int i = 0; i < 64; i++) {
 					DWORD64 CurrentController = E->GetEntInfo(i);
 					if (CurrentController != NULL) {
-						DWORD64 moneyservices; read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices);
+						DWORD64 moneyservices; read<DWORD64>(CurrentController + CCSPlayerController::m_pInGameMoneyServices, moneyservices);
 						if (moneyservices != NULL) {
 							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
 								int account;
-								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
+								if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
 									int cashSpent;
-									if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
+									if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
 										int cashSpentTotal;
-										if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
+										if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
 											if (ImGui::TreeNode(name)) {
 												ImGui::TextColored(ImColor(255, 255, 255), "Account: %d", account);
 												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent this round: %d", cashSpent);
@@ -639,23 +638,23 @@ void renderImGui() {
 			if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance)
 				continue;
 
-			DWORD64 CameraServices; read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices);
+			DWORD64 CameraServices; read<DWORD64>(LocalPlayer + C_BasePlayerPawn::m_pCameraServices, CameraServices);
 			if (CameraServices == NULL)
 				continue;
-			DWORD64 sceneNode; read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode);
+			DWORD64 sceneNode; read<DWORD64>(CurrentPawn + C_BaseEntity::m_pGameSceneNode, sceneNode);
 			if (sceneNode == NULL)
 				continue;
-			DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+			DWORD64 BoneArray; read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray);
 			if (BoneArray == NULL)
 				continue;
-			DWORD64 CurrentWeapon; read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon);
+			DWORD64 CurrentWeapon; read<DWORD64>(CurrentPawn + C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon);
 			if (CurrentWeapon == NULL)
 				continue;
 
 			Vector3 pos = E->GetBonePos3D(BoneArray, 28); Vector2 feetpos = PosToScreen(pos);
 			Vector3 pos1 = E->GetBonePos3D(BoneArray, 28);
 			int fFlag;
-			if (!read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag))
+			if (!read<int>(LocalPlayer + C_BaseEntity::m_fFlags, fFlag))
 				continue;
 			if (fFlag == CROUCHING)
 				pos1.z += 55;
@@ -809,7 +808,7 @@ void renderImGui() {
 				}
 			}
 			if (USettings::GunName_Esp) {
-				short weaponDefinitionIndex; read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex);
+				short weaponDefinitionIndex; read<short>(CurrentWeapon + (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex);
 				if (weaponDefinitionIndex != -1) {
 					auto it = weaponMap.find(weaponDefinitionIndex);
 					Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
@@ -857,9 +856,9 @@ void renderImGui() {
 			DWORD64 ent = E->GetEnt(FindClosestEnemy());
 			if (ent != NULL) {
 				DWORD64 sceneNode;
-				if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
+				if (read<DWORD64>(ent + C_BaseEntity::m_pGameSceneNode, sceneNode)) {
 					DWORD64 BoneArray;
-					if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
+					if (read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray)) {
 						Vector3 aimpos;
 						if (USettings::Head_Target)
 							aimpos = E->GetBonePos3D(BoneArray, bones::head);
@@ -1045,17 +1044,7 @@ int main(int argc, char* argv[]) {
 	Y_Screen = GetSystemMetrics(SM_CYSCREEN);
 	if (createConsole == false) {
 		ShowWindow(GetConsoleWindow(), SW_HIDE);
-	}	
-	auto ProcessStatus = ProcessMgr.Attach("cs2.exe");
-
-	if (ProcessStatus != StatusCode::SUCCEED)
-	{
-		std::cout << "[ERROR] Failed to attach process, StatusCode:" << ProcessStatus << std::endl;
-		system("pause");
-		return 0;
 	}
-	std::cout << "[Game] Pid:" << ProcessMgr.ProcessID;
-	client = GetHandle("client.dll");
 
 	windowInfo = new WindowInfo();
 	bool WindowFocus = false;
@@ -1077,5 +1066,6 @@ int main(int argc, char* argv[]) {
 	}
 	createOverlay();
 	createDirectX();
+	initializeProcessHandle();
 	mainLoop();
 }
