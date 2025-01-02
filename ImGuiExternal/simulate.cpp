@@ -16,35 +16,44 @@ void sim::SimClick() {
 }
 
 void sim::SimulateMouseMove(int dx, int dy) {
-    POINT currentPos;
-    GetCursorPos(&currentPos);
-
-    const int steps = 30;
-
-    double stepX = (double)dx / steps;
-    double stepY = (double)dy / steps;
-
-    double errorX = 0.0;
-    double errorY = 0.0;
+    // Reducir pasos para movimiento más rápido pero aún suave
+    const int steps = 15;
+    
+    // Calcular incrementos por paso
+    float stepX = (float)dx / steps;
+    float stepY = (float)dy / steps;
+    
+    float accX = 0.0f;
+    float accY = 0.0f;
 
     for (int i = 0; i < steps; i++) {
-        errorX += stepX;
-        errorY += stepY;
-
-        int moveX = (int)errorX;
-        int moveY = (int)errorY;
-
-        errorX -= moveX;
-        errorY -= moveY;
-
-        if (moveX | moveY) {
-            mouse_event(MOUSEEVENTF_MOVE,
-                (DWORD)moveX,
-                (DWORD)moveY,
-                0,
-                0);
+        accX += stepX;
+        accY += stepY;
+        
+        int moveX = (int)accX;
+        int moveY = (int)accY;
+        
+        // Solo enviar evento si hay movimiento real
+        if (moveX != 0 || moveY != 0) {
+            mouse_event(MOUSEEVENTF_MOVE, moveX, moveY, 0, 0);
+            accX -= moveX;
+            accY -= moveY;
         }
 
-        Sleep(1);
+        // Menor delay entre movimientos
+        Sleep(0);
     }
+}
+
+void sim::MoveToTarget(int targetX, int targetY) {
+    // Usar centro de pantalla directamente sin GetCursorPos
+    int dx = targetX - (X_Screen / 2);
+    int dy = targetY - (Y_Screen / 2);
+    
+    // Aplicar un límite máximo al movimiento para evitar saltos bruscos
+    const int maxMove = 100;
+    dx = (dx > maxMove) ? maxMove : (dx < -maxMove) ? -maxMove : dx;
+    dy = (dy > maxMove) ? maxMove : (dy < -maxMove) ? -maxMove : dy;
+    
+    SimulateMouseMove(dx, dy);
 }
