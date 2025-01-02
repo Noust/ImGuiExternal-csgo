@@ -210,279 +210,342 @@ void renderImGui() {
 	if (isMenuVisible) {
 		inputHandler();
 		drawItem();
-		static animator Animator = { 255,false,0.5f };
+		
+		// Animate menu
+		static animator Animator = { 255, false, 0.5f };
 		animatecontent(Animator);
-		ImGui::Begin("CS Menu", 0, ImGuiWindowFlags_NoCollapse);
-		ImVec2 windowpos{ ImGui::GetWindowPos() };
-		ImVec2 windowsize{ ImGui::GetWindowSize() };
-		ImGui::BeginChild("##top", ImVec2(ImGui::GetContentRegionAvail().x, 46), true);
-		ImVec2 child_windowpos{ ImGui::GetWindowPos() };
-		ImVec2 child_windowsize{ ImGui::GetWindowSize() };
-		auto windowWidth = ImGui::GetWindowSize().x;
-		auto buttonWidth = (ImGui::GetContentRegionAvail().x - 30) / 4;
-		auto spacing = (windowWidth - (buttonWidth * 4)) / 5;
-		ImGui::SetCursorPosX(spacing);
-		if (ImGui::Button("Gun", ImVec2(buttonWidth, 0))) {
-			USettings::MenuWindow = 1;
+
+		// Main window styling
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 12.0f);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.11f, 0.11f, 0.11f, 1.00f));
+
+		ImGui::Begin("CS Menu", nullptr, ImGuiWindowFlags_NoCollapse);
+		ImVec2 windowpos = ImGui::GetWindowPos();
+		ImVec2 windowsize = ImGui::GetWindowSize();
+
+		// Navigation bar
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
+		ImGui::BeginChild("##Navigation", ImVec2(ImGui::GetContentRegionAvail().x, 50), true);
+		ImVec2 child_windowpos = ImGui::GetWindowPos();
+		ImVec2 child_windowsize = ImGui::GetWindowSize();
+
+		// Navigation buttons
+		float windowWidth = ImGui::GetWindowSize().x;
+		float buttonWidth = (ImGui::GetContentRegionAvail().x - 30) / 4;
+		float spacing = (windowWidth - (buttonWidth * 4)) / 5;
+
+		const char* tabs[] = { "Gun", "Legit", "Visuals", "Config" };
+		int tabValues[] = { 1, 2, 3, 4 };
+
+		for (int i = 0; i < 4; i++) {
+			ImGui::SetCursorPosX(spacing * (i + 1) + buttonWidth * i);
+			
+			bool selected = (USettings::MenuWindow == tabValues[i]);
+			if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+			
+			if (ImGui::Button(tabs[i], ImVec2(buttonWidth, 0))) {
+				USettings::MenuWindow = tabValues[i];
+			}
+			
+			if (selected) ImGui::PopStyleColor();
+			
+			if (i < 3) ImGui::SameLine();
 		}
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(spacing * 2 + buttonWidth);
-		if (ImGui::Button("Legit", ImVec2(buttonWidth, 0))) {
-			USettings::MenuWindow = 2;
-		}
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(spacing * 3 + buttonWidth * 2);
-		if (ImGui::Button("Visuals", ImVec2(buttonWidth, 0))) {
-			USettings::MenuWindow = 3;
-		}
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(spacing * 4 + buttonWidth * 3);
-		if (ImGui::Button("Config", ImVec2(buttonWidth, 0))) {
-			USettings::MenuWindow = 4;
-		}
+
 		ImGui::EndChild();
-		ImGui::BeginChild("##Bottom", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
-		ImVec2 child_windowpos1{ ImGui::GetWindowPos() };
-		ImVec2 child_windowsize1{ ImGui::GetWindowSize() };
+		ImGui::PopStyleVar();
+
+		// Content area
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
+		ImGui::BeginChild("##Content", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), true);
+		ImVec2 child_windowpos1 = ImGui::GetWindowPos();
+		ImVec2 child_windowsize1 = ImGui::GetWindowSize();
+
+		// Main menu / Welcome screen
 		if (USettings::MenuWindow == 0) {
-			ImGui::SameLine((ImGui::GetContentRegionAvail().x / 2) - (200 / 2));
+			ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x / 2) - 100);
 			ImGui::Image((void*)pTexture, ImVec2(200, 170));
 			centertext<float>("CSGO 2 Menu by Nova", 0.0f, 0.0f);
 			centertext<float>("Window Size X:%0.f Y:%0.f", windowsize.x, windowsize.y);
 		}
+
+		// Gun menu
 		else if (USettings::MenuWindow == 1) {
-			ImGui::Checkbox("trigger Bot", &USettings::triggerbot);
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+			
+			ImGui::Text("Combat Settings");
+
+			// Trigger bot section
+			ImGui::Checkbox("Enable Trigger Bot", &USettings::triggerbot);
 			if (USettings::triggerbot) {
-				if (ImGui::Combo("Trigger Key", &USettings::TriggerHotKey, "XBUTTON2\0MENU\0RBUTTON\0XBUTTON1\0LBUTTON\0CAPITAL\0SHIFT\0CONTROL")) {
-					USettings::TSetHotKey(USettings::TriggerHotKey);
-				}
-				ImGui::Spacing();
-				ImGui::Separator();
-				ImGui::Spacing();
-				ImGui::SliderInt("Triggerbot Delay", &USettings::triggerbot_delayms, 0, 200);
+				ImGui::Combo("Trigger Key", &USettings::TriggerHotKey, "XBUTTON2\0MENU\0RBUTTON\0XBUTTON1\0LBUTTON\0CAPITAL\0SHIFT\0CONTROL");
+				ImGui::SliderInt("Delay (ms)", &USettings::triggerbot_delayms, 0, 200);
 				ImGui::Separator();
 			}
-			ImGui::Checkbox("AimBot", &USettings::Aimbot);
+
+			// Aimbot section
+			ImGui::Checkbox("Enable Aimbot", &USettings::Aimbot);
 			if (USettings::Aimbot) {
-				if (ImGui::Combo("Aim Key", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL")) {
-					USettings::SetHotKey(USettings::AimBotHotKey);
-				}
-				ImGui::Spacing();
-				ImGui::Spacing();
-				ImGui::Text("Settings");
-				ImGui::SliderFloat("AimBot Smooth", &USettings::Smooth, 0, 0.7f);
-				ImGui::SliderFloat("AimBot Fov", &USettings::AimFov, 10, 1920);
-				ImGui::Spacing();
-				ImGui::Spacing();
-				ImGui::Text("Target");
+				ImGui::Combo("Aim Key", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL");
+				
+				ImGui::Text("Core Settings");
+				ImGui::SliderFloat("Smoothness", &USettings::Smooth, 0, 0.7f);
+				ImGui::SliderFloat("FOV", &USettings::AimFov, 10, 1920);
+
+				ImGui::Text("Target Selection");
 				ImGui::Checkbox("Head Target", &USettings::Head_Target);
-				if (USettings::Head_Target)
-					USettings::Body_Target = false;
 				ImGui::Checkbox("Body Target", &USettings::Body_Target);
-				if (USettings::Body_Target)
-					USettings::Head_Target = false;
-				ImGui::Spacing();
-				ImGui::Spacing();
-				ImGui::Text("Aimbot Fov");
-				ImGui::Checkbox("Show Fov", &USettings::ShowFov);
+				if (USettings::Head_Target) USettings::Body_Target = false;
+				if (USettings::Body_Target) USettings::Head_Target = false;
+
+				ImGui::Text("Visual Feedback");
+				ImGui::Checkbox("Show FOV", &USettings::ShowFov);
 				if (USettings::ShowFov) {
-					ImGui::SliderInt("Fov Thickness", &USettings::FovThickness, 0, 10);
-					ImGui::ColorEdit3("Fov Color", (float*)&USettings::FovColor);
-					ImGui::Checkbox("Filled Circle", &USettings::FilledCircle);
-					ImGui::ColorEdit3("Filled Circle Color", (float*)&USettings::FilledCircleColor);
-					ImGui::Spacing();
-					ImGui::Spacing();
+					ImGui::SliderInt("FOV Circle Thickness", &USettings::FovThickness, 0, 10);
+					ImGui::ColorEdit3("FOV Circle Color", (float*)&USettings::FovColor);
+					ImGui::Checkbox("Fill FOV Circle", &USettings::FilledCircle);
+					ImGui::ColorEdit3("Fill Color", (float*)&USettings::FilledCircleColor);
 				}
+
 				ImGui::Checkbox("Show Target", &USettings::ShowTarget);
 				if (USettings::ShowTarget) {
-					ImGui::SliderInt("Target Thickness", &USettings::TargetThickness, 0, 10);
-					ImGui::ColorEdit3("Target Color", (float*)&USettings::TargetColor);
+					ImGui::SliderInt("Target Indicator Thickness", &USettings::TargetThickness, 0, 10);
+					ImGui::ColorEdit3("Target Indicator Color", (float*)&USettings::TargetColor);
 				}
-				ImGui::Separator();
 			}
+			ImGui::PopStyleColor();
 		}
+
+		// Rest of the menus remain the same but with consistent styling
 		else if (USettings::MenuWindow == 2) {
-			ImGui::Checkbox("Buny Hop", &USettings::BunnyHop);
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			// Movement & Utility Section
+			ImGui::Text("Movement & Utility");
+			ImGui::Checkbox("Bunny Hop", &USettings::BunnyHop);
 			ImGui::Checkbox("No Flash", &USettings::No_Flash);
-			ImGui::Checkbox("Money Manager", &USettings::MoneyServices);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Money Manager Section
+			ImGui::Text("Money Manager");
+			ImGui::Checkbox("Enable Money Services", &USettings::MoneyServices);
 			if (USettings::MoneyServices) {
+				ImGui::BeginChild("MoneyServices", ImVec2(0, 200), true);
 				for (int i = 0; i < 64; i++) {
-					DWORD64 CurrentController = E->GetEntInfo(i);
-					if (CurrentController != NULL) {
-						DWORD64 moneyservices; read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices);
-						if (moneyservices != NULL) {
+					if (DWORD64 CurrentController = E->GetEntInfo(i)) {
+						DWORD64 moneyservices;
+						if (read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices) && moneyservices != NULL) {
+							char name[16];
 							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
-								int account;
-								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
-									int cashSpent;
-									if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
-										int cashSpentTotal;
-										if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
-											if (ImGui::TreeNode(name)) {
-												ImGui::TextColored(ImColor(255, 255, 255), "Account: %d", account);
-												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent this round: %d", cashSpent);
-												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent total: %d", cashSpentTotal);
-												ImGui::TreePop();
-											}
-										}
+								int account, cashSpent, cashSpentTotal;
+								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account) &&
+									read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent) &&
+									read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
+									
+									if (ImGui::TreeNode(name)) {
+										ImGui::TextColored(ImColor(0, 255, 0), "Account: $%d", account);
+										ImGui::TextColored(ImColor(255, 165, 0), "Round Spent: $%d", cashSpent);
+										ImGui::TextColored(ImColor(255, 0, 0), "Total Spent: $%d", cashSpentTotal);
+										ImGui::TreePop();
 									}
 								}
 							}
 						}
 					}
 				}
+				ImGui::EndChild();
 			}
+			ImGui::PopStyleColor();
 		}
 		else if (USettings::MenuWindow == 3) {
-			ImGui::Checkbox("Fov Changer", &USettings::fov_changer);
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			// View Settings Section
+			ImGui::Text("View Settings");
+			ImGui::Checkbox("FOV Changer", &USettings::fov_changer);
 			if (USettings::fov_changer) {
-				ImGui::SliderInt("Fov value", &USettings::fov_value, 0, 170);
-				if (ImGui::Button("Default")) {
+				ImGui::SliderInt("FOV Value", &USettings::fov_value, 0, 170);
+				if (ImGui::Button("Reset to Default")) {
 					USettings::fov_value = USettings::oldfov_value;
 				}
 				ImGui::Separator();
 			}
+
 			ImGui::Checkbox("Radar Hack", &USettings::radar_hack);
-			ImGui::Checkbox("Snap Line Esp", &USettings::SnaplLine_Esp);
-			if (USettings::SnaplLine_Esp) {
-				ImGui::ColorEdit3("Enemy Snap Line Esp Color", (float*)&USettings::Enemy_SnaplLine_Esp_Color);
-				ImGui::ColorEdit3("Squad Snap Line Esp Color", (float*)&USettings::Squad_SnaplLine_Esp_Color);
-				ImGui::SliderInt("Snap Line Esp Thickness", &USettings::SnaplLine_Esp_Thickness, 0, 10);
-				ImGui::Spacing();
-				ImGui::Spacing();
-				ImGui::Text("Start Point:  X:%f  Y:%f", USettings::SnaplLine_Esp_Start_Point.x, USettings::SnaplLine_Esp_Start_Point.y);
-				if (ImGui::Button("Bottom")) {
-					USettings::SnaplLine_Esp_Start_Point = { X_Screen / 2, Y_Screen };
-				}
-				if (ImGui::Button("Top")) {
-					USettings::SnaplLine_Esp_Start_Point = { X_Screen / 2, 0 };
-				}
-				if (ImGui::Button("Left Side")) {
-					USettings::SnaplLine_Esp_Start_Point = { 0, Y_Screen / 2 };
-				}
-				if (ImGui::Button("Right Side")) {
-					USettings::SnaplLine_Esp_Start_Point = { X_Screen, Y_Screen / 2 };
-				}
-				ImGui::SliderFloat("Custom X", &USettings::SnaplLine_Esp_Start_Point.x, 0, X_Screen);
-				ImGui::SliderFloat("Custom Y", &USettings::SnaplLine_Esp_Start_Point.y, 0, Y_Screen);
-				ImGui::Spacing();
-				ImGui::Spacing();
-				if (USettings::SnaplLine_Esp_End_Point)
-					ImGui::Text("End Point:  Head");
-				else
-					ImGui::Text("End Point:  Feet");
-				if (ImGui::Button("Head")) {
-					USettings::SnaplLine_Esp_End_Point = true;
-				}
-				if (ImGui::Button("Feet")) {
-					USettings::SnaplLine_Esp_End_Point = false;
-				}
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Bone Esp", &USettings::Bone_Esp);
-			if (USettings::Bone_Esp) {
-				ImGui::ColorEdit3("Bone Enemy Color", (float*)(&USettings::Enemy_Bone_Esp_Color));
-				ImGui::ColorEdit3("Bone Squad Color", (float*)(&USettings::Squad_Bone_Esp_Color));
-				ImGui::SliderInt("Bone thickness", &USettings::Bone_Esp_Thickness, 0, 10);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Show Distance", &USettings::Distance_Esp);
-			if (USettings::Distance_Esp) {
-				ImGui::ColorEdit3("Enemy Distance Color", (float*)&USettings::Enemy_Distance_Esp_Color);
-				ImGui::ColorEdit3("Squad Distance Color", (float*)&USettings::Squad_Distance_Esp_Color);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Show Health Bar", &USettings::HealthBar_ESP);
-			if (USettings::HealthBar_ESP) {
-				ImGui::SliderInt("Health Bar Thickness", &USettings::HealthBar_Esp_Thickness, 0, 10);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Show Armor Bar", &USettings::ArmorBar_ESP);
-			if (USettings::ArmorBar_ESP) {
-				ImGui::SliderInt("Armor Bar Thickness", &USettings::ArmorBar_Esp_Thickness, 0, 10);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Box Esp", &USettings::Box_ESP);
-			if (USettings::Box_ESP) {
-				ImGui::ColorEdit3("Enemy Box Esp Color", (float*)&USettings::Enemy_Box_Esp_Color);
-				ImGui::ColorEdit3("Squad Box Esp Color", (float*)&USettings::Squad_Box_Esp_Color);
-				ImGui::SliderInt("Box Esp Thickness", &USettings::Box_Esp_Thickness, 0, 10);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Corner Box Esp", &USettings::CornerBox_ESP);
-			if (USettings::CornerBox_ESP) {
-				ImGui::ColorEdit3("Enemy Corner Box Esp Color", (float*)&USettings::Enemy_CornerBox_Esp_Color);
-				ImGui::ColorEdit3("Squad Corner Box Esp Color", (float*)&USettings::Squad_CornerBox_Esp_Color);
-				ImGui::SliderInt("Box Corner Esp Thickness", &USettings::Box_CornerEsp_Thickness, 0, 10);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Filled Box Esp", &USettings::FilledBox_Esp);
-			if (USettings::FilledBox_Esp) {
-				ImGui::ColorEdit3("Enemy Filled Box Esp Color", (float*)&USettings::Enemy_FilledBox_Esp_Color);
-				ImGui::ColorEdit3("Squad Filled Box Esp Color", (float*)&USettings::Squad_FilledBox_Esp_Color);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("3D Box Esp", &USettings::Box3D_Esp);
-			if (USettings::Box3D_Esp) {
-				ImGui::ColorEdit3("Enemy 3D Box Esp Color", (float*)&USettings::Enemy_Box3D_Esp_Color);
-				ImGui::ColorEdit3("Squad 3D Box Esp Color", (float*)&USettings::Squad_Box3D_Esp_Color);
-				ImGui::SliderInt("3D Box Esp Thickness", &USettings::Box3D_Esp_Thickness, 0, 10);
-				ImGui::SliderFloat("3D Box Esp Width", &USettings::Box3D_Width, 10, 40);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Name Esp", &USettings::Name_ESP);
-			if (USettings::Name_ESP) {
-				ImGui::ColorEdit3("Enemy Name Color", (float*)&USettings::Enemy_Name_ESP_Color);
-				ImGui::ColorEdit3("Squad Name Color", (float*)&USettings::Squad_Name_ESP_Color);
-				ImGui::Separator();
-			}
-			ImGui::Checkbox("Gun Name Esp", &USettings::GunName_Esp);
-			if (USettings::GunName_Esp) {
-				ImGui::ColorEdit3("Enemy Gun Name Color", (float*)&USettings::Enemy_GunName_Color);
-				ImGui::ColorEdit3("Squad Gun Name Color", (float*)&USettings::Squad_GunName_Color);
-				ImGui::Separator();
-			}
 			ImGui::Checkbox("Night Mode", &USettings::Night_Mode);
 			ImGui::Checkbox("Full Bright", &USettings::FullBright_Mode);
-			ImGui::Checkbox("Draw Crosshair", &USettings::DrawCrosshair);
-			if (USettings::DrawCrosshair) {
-				ImGui::Checkbox("When not Aiming", &USettings::whennotaiming);
-				ImGui::ColorEdit3("Crosshair Color", (float*)(&USettings::Crosshair_Color));
-				ImGui::SliderFloat("Crosshair size", &USettings::Crosshair_size, 1, 30);
-				ImGui::SliderInt("Crosshair Thickness", &USettings::Crosshair_thickness, 0, 10);
-				ImGui::Checkbox("Circle", &USettings::circle);
-				ImGui::Checkbox("Cross", &USettings::Cross);
-				ImGui::Separator();
-			}
-			ImGui::SliderInt("ESP Distance", &USettings::ESP_Distance, 0, 100);
-		}
-		else if (USettings::MenuWindow == 4) {
-			ImGui::Text("Menu Animation Options");
-			ImGui::Checkbox("Window Animation", &USettings::window_animation);
-			ImGui::Checkbox("Navigation Window Animation", &USettings::navigationwindow_animation);
-			ImGui::Checkbox("Options Window Animation", &USettings::optionswindow_animation);
+
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
-			ImGui::Text("Settings Options");
-			if (ImGui::Button("Save Current Settings")) {
+
+			// ESP Features Section
+			ImGui::Text("ESP Features");
+
+			// Snap Line ESP
+			ImGui::Checkbox("Snap Lines", &USettings::SnaplLine_Esp);
+			if (USettings::SnaplLine_Esp) {
+				ImGui::ColorEdit3("Enemy Line Color", (float*)&USettings::Enemy_SnaplLine_Esp_Color);
+				ImGui::ColorEdit3("Team Line Color", (float*)&USettings::Squad_SnaplLine_Esp_Color);
+				ImGui::SliderInt("Line Thickness", &USettings::SnaplLine_Esp_Thickness, 0, 10);
+				
+				ImGui::Text("Line Start Position");
+				if (ImGui::BeginTable("LinePositions", 2)) {
+					ImGui::TableNextColumn();
+					if (ImGui::Button("Bottom")) USettings::SnaplLine_Esp_Start_Point = { X_Screen / 2, Y_Screen };
+					if (ImGui::Button("Left")) USettings::SnaplLine_Esp_Start_Point = { 0, Y_Screen / 2 };
+					ImGui::TableNextColumn();
+					if (ImGui::Button("Top")) USettings::SnaplLine_Esp_Start_Point = { X_Screen / 2, 0 };
+					if (ImGui::Button("Right")) USettings::SnaplLine_Esp_Start_Point = { X_Screen, Y_Screen / 2 };
+					ImGui::EndTable();
+				}
+				
+				ImGui::SliderFloat("Custom X", &USettings::SnaplLine_Esp_Start_Point.x, 0, X_Screen);
+				ImGui::SliderFloat("Custom Y", &USettings::SnaplLine_Esp_Start_Point.y, 0, Y_Screen);
+				
+				ImGui::Text("Line End Point");
+				if (ImGui::Button(USettings::SnaplLine_Esp_End_Point ? "Head" : "Feet")) {
+					USettings::SnaplLine_Esp_End_Point = !USettings::SnaplLine_Esp_End_Point;
+				}
+				ImGui::Separator();
+			}
+
+			// Box ESP Options
+			ImGui::Checkbox("Box ESP", &USettings::Box_ESP);
+			if (USettings::Box_ESP) {
+				ImGui::ColorEdit3("Enemy Box Color", (float*)&USettings::Enemy_Box_Esp_Color);
+				ImGui::ColorEdit3("Team Box Color", (float*)&USettings::Squad_Box_Esp_Color);
+				ImGui::SliderInt("Box Thickness", &USettings::Box_Esp_Thickness, 0, 10);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Corner Box", &USettings::CornerBox_ESP);
+			if (USettings::CornerBox_ESP) {
+				ImGui::ColorEdit3("Enemy Corner Color", (float*)&USettings::Enemy_CornerBox_Esp_Color); 
+				ImGui::ColorEdit3("Team Corner Color", (float*)&USettings::Squad_CornerBox_Esp_Color);
+				ImGui::SliderInt("Corner Thickness", &USettings::Box_CornerEsp_Thickness, 0, 10);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("3D Box", &USettings::Box3D_Esp);
+			if (USettings::Box3D_Esp) {
+				ImGui::ColorEdit3("Enemy 3D Box Color", (float*)&USettings::Enemy_Box3D_Esp_Color);
+				ImGui::ColorEdit3("Team 3D Box Color", (float*)&USettings::Squad_Box3D_Esp_Color);
+				ImGui::SliderInt("3D Box Thickness", &USettings::Box3D_Esp_Thickness, 0, 10);
+				ImGui::SliderFloat("3D Box Width", &USettings::Box3D_Width, 10, 40);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Filled Box", &USettings::FilledBox_Esp);
+			if (USettings::FilledBox_Esp) {
+				ImGui::ColorEdit4("Enemy Fill Color", (float*)&USettings::Enemy_FilledBox_Esp_Color);
+				ImGui::ColorEdit4("Team Fill Color", (float*)&USettings::Squad_FilledBox_Esp_Color);
+				ImGui::Separator();
+			}
+
+			// Player Info ESP
+			ImGui::Checkbox("Show Names", &USettings::Name_ESP);
+			if (USettings::Name_ESP) {
+				ImGui::ColorEdit3("Enemy Name Color", (float*)&USettings::Enemy_Name_ESP_Color);
+				ImGui::ColorEdit3("Team Name Color", (float*)&USettings::Squad_Name_ESP_Color);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Show Distance", &USettings::Distance_Esp);
+			if (USettings::Distance_Esp) {
+				ImGui::ColorEdit3("Enemy Distance Color", (float*)&USettings::Enemy_Distance_Esp_Color);
+				ImGui::ColorEdit3("Team Distance Color", (float*)&USettings::Squad_Distance_Esp_Color);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Show Weapon", &USettings::GunName_Esp);
+			if (USettings::GunName_Esp) {
+				ImGui::ColorEdit3("Enemy Weapon Color", (float*)&USettings::Enemy_GunName_Color);
+				ImGui::ColorEdit3("Team Weapon Color", (float*)&USettings::Squad_GunName_Color);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Show Bones", &USettings::Bone_Esp);
+			if (USettings::Bone_Esp) {
+				ImGui::ColorEdit3("Enemy Bone Color", (float*)&USettings::Enemy_Bone_Esp_Color);
+				ImGui::ColorEdit3("Team Bone Color", (float*)&USettings::Squad_Bone_Esp_Color);
+				ImGui::SliderInt("Bone Thickness", &USettings::Bone_Esp_Thickness, 0, 10);
+				ImGui::Separator();
+			}
+
+			ImGui::Checkbox("Health Bar", &USettings::HealthBar_ESP);
+			ImGui::Checkbox("Armor Bar", &USettings::ArmorBar_ESP);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Crosshair Settings
+			ImGui::Text("Crosshair Settings");
+			ImGui::Checkbox("Custom Crosshair", &USettings::DrawCrosshair);
+			if (USettings::DrawCrosshair) {
+				ImGui::Checkbox("Show When Not Aiming", &USettings::whennotaiming);
+				ImGui::ColorEdit3("Crosshair Color", (float*)&USettings::Crosshair_Color);
+				ImGui::SliderFloat("Size", &USettings::Crosshair_size, 1, 30);
+				ImGui::SliderInt("Thickness", &USettings::Crosshair_thickness, 0, 10);
+				ImGui::Checkbox("Circle", &USettings::circle);
+				ImGui::Checkbox("Cross", &USettings::Cross);
+			}
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Global ESP Settings
+			ImGui::Text("Global ESP Settings");
+			ImGui::SliderInt("Max ESP Distance", &USettings::ESP_Distance, 0, 100);
+			
+			ImGui::PopStyleColor();
+		}
+		else if (USettings::MenuWindow == 4) {
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			// UI Settings
+			ImGui::Text("Menu Animations");
+			ImGui::Checkbox("Window Animation", &USettings::window_animation);
+			ImGui::Checkbox("Navigation Animation", &USettings::navigationwindow_animation);
+			ImGui::Checkbox("Options Animation", &USettings::optionswindow_animation);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			// Save/Load Settings
+			ImGui::Text("Configuration");
+			if (ImGui::Button("Save Settings")) {
 				F->SaveSettings();
 			}
+			ImGui::SameLine();
 			if (ImGui::Button("Load Settings")) {
 				if (std::filesystem::exists("sarilla.bin"))
 					F->ReadSettings();
 			}
+
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
-			ImGui::Text("ESP Options");
-			ImGui::Checkbox("Show Team", &USettings::Show_Squad);
-			ImGui::Checkbox("Show Enemy", &USettings::Show_Enemy);
+
+			// ESP Filters
+			ImGui::Text("ESP Filters");
+			ImGui::Checkbox("Show Teammates", &USettings::Show_Squad);
+			ImGui::Checkbox("Show Enemies", &USettings::Show_Enemy);
+
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
-			ImGui::Text("Feature Options");
-			if (ImGui::Button("Disable all")) {
+
+			// Quick Actions
+			ImGui::Text("Quick Actions");
+			if (ImGui::Button("Disable All Features")) {
 				USettings::Aimbot = false;
 				USettings::triggerbot = false;
 				USettings::ArmorBar_ESP = false;
@@ -517,7 +580,9 @@ void renderImGui() {
 				USettings::optionswindow_animation = false;
 				USettings::GunName_Esp = false;
 			}
-			if (ImGui::Button("Default")) {
+
+			ImGui::SameLine();
+			if (ImGui::Button("Reset to Default")) {
 				USettings::triggerbot = false;
 				USettings::triggerbot_delayms = 1;
 				USettings::Aimbot = false;
@@ -583,9 +648,7 @@ void renderImGui() {
 				USettings::Box3D_Width = 20;
 				USettings::ESP_Distance = 50;
 				USettings::Night_Mode = false;
-				USettings::ColorBlack = { 0,0,0,90 };
 				USettings::FullBright_Mode = false;
-				USettings::ColorWhite = { 255,255,255,80 };
 				USettings::BunnyHop = false;
 				USettings::window_animation = true;
 				USettings::navigationwindow_animation = false;
@@ -598,308 +661,247 @@ void renderImGui() {
 				USettings::ArmorBar_ESP = false;
 				USettings::AimBotHotKey = 0;
 			}
+			ImGui::PopStyleColor();
 		}
 		ImGui::EndChild();
+		ImGui::PopStyleVar();
+
+		// Window animations
 		if (USettings::window_animation)
-			ImGui::GetBackgroundDrawList()->AddRect({ windowpos.x - 1, windowpos.y - 1 }, { windowpos.x + windowsize.x + 1, windowpos.y + windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);//84, 171, 219
+			ImGui::GetBackgroundDrawList()->AddRect(
+				ImVec2(windowpos.x - 1, windowpos.y - 1),
+				ImVec2(windowpos.x + windowsize.x + 1, windowpos.y + windowsize.y + 1),
+				ImColor(255, 255, 255, (int)Animator.alpha), 12.0f
+			);
+
 		if (USettings::navigationwindow_animation)
-			ImGui::GetForegroundDrawList()->AddRect({ child_windowpos.x - 1, child_windowpos.y - 1 }, { child_windowpos.x + child_windowsize.x + 1, child_windowpos.y + child_windowsize.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+			ImGui::GetForegroundDrawList()->AddRect(
+				ImVec2(child_windowpos.x - 1, child_windowpos.y - 1),
+				ImVec2(child_windowpos.x + child_windowsize.x + 1, child_windowpos.y + child_windowsize.y + 1),
+				ImColor(255, 255, 255, (int)Animator.alpha), 12.0f
+			);
+
 		if (USettings::optionswindow_animation)
-			ImGui::GetForegroundDrawList()->AddRect({ child_windowpos1.x - 1, child_windowpos1.y - 1 }, { child_windowpos1.x + child_windowsize1.x + 1, child_windowpos1.y + child_windowsize1.y + 1 }, ImColor(255, 255, 255, (int)Animator.alpha), 12.0f, 0, 1);
+			ImGui::GetForegroundDrawList()->AddRect(
+				ImVec2(child_windowpos1.x - 1, child_windowpos1.y - 1),
+				ImVec2(child_windowpos1.x + child_windowsize1.x + 1, child_windowpos1.y + child_windowsize1.y + 1),
+				ImColor(255, 255, 255, (int)Animator.alpha), 12.0f
+			);
+
 		if (USettings::show_watermark)
 			ImGui::GetBackgroundDrawList()->AddImage((void*)pTexture, ImVec2(1726, -10), ImVec2(1906, 170));
+
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor();
 		ImGui::End();
 		SetFocus(overlayWindow);
 	}
 	if (USettings::ArmorBar_ESP || USettings::GunName_Esp || USettings::SnaplLine_Esp || USettings::Box_ESP || USettings::Name_ESP || USettings::Bone_Esp || USettings::Distance_Esp || USettings::HealthBar_ESP || USettings::CornerBox_ESP || USettings::FilledBox_Esp || USettings::Box3D_Esp || USettings::radar_hack) {
+		DWORD64 LocalPlayer = E->GetLocal();
+		if (!LocalPlayer) return;
+
 		for (int i = 0; i < 64; i++) {
 			DWORD64 CurrentController = E->GetEntInfo(i);
 			DWORD64 CurrentPawn = E->GetEnt(i);
-			DWORD64 LocalPlayer = E->GetLocal();
 
-			if (LocalPlayer == NULL)
-				continue;
-			if (CurrentPawn == NULL)
-				continue;
-			if (CurrentController == NULL)
+			if (!CurrentPawn || !CurrentController || CurrentPawn == LocalPlayer)
 				continue;
 
 			int health = E->GetHealth(CurrentPawn);
-			int armor = E->GetArmor(CurrentPawn);
-
 			if (health < 1 || health > 100)
 				continue;
 
 			int TeamNum = E->GetTeam(CurrentPawn);
 			int LTeamNum = E->GetTeam(LocalPlayer);
 
-			if (LocalPlayer == CurrentPawn)
+			float distance = E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100;
+			if (distance > USettings::ESP_Distance)
 				continue;
 
-			if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance)
+			DWORD64 CameraServices, sceneNode, BoneArray, CurrentWeapon;
+			if (!read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices) ||
+				!read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode) ||
+				!read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray) ||
+				!read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon))
 				continue;
 
-			DWORD64 CameraServices; read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices);
-			if (CameraServices == NULL)
-				continue;
-			DWORD64 sceneNode; read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode);
-			if (sceneNode == NULL)
-				continue;
-			DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
-			if (BoneArray == NULL)
-				continue;
-			DWORD64 CurrentWeapon; read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon);
-			if (CurrentWeapon == NULL)
-				continue;
+			Vector3 pos = E->GetBonePos3D(BoneArray, 28);
+			Vector2 feetpos = PosToScreen(pos);
+			Vector3 pos1 = pos;
 
-			Vector3 pos = E->GetBonePos3D(BoneArray, 28); Vector2 feetpos = PosToScreen(pos);
-			Vector3 pos1 = E->GetBonePos3D(BoneArray, 28);
 			int fFlag;
 			if (!read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag))
 				continue;
-			if (fFlag == CROUCHING)
-				pos1.z += 55;
-			else
-				pos1.z += 70;
 
+			pos1.z += (fFlag == CROUCHING) ? 55 : 70;
 			Vector2 headpos = PosToScreen(pos1);
 			float height = feetpos.y - headpos.y;
 
-			if (USettings::radar_hack) {
+			bool isVisible = feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen;
+			bool showSquad = TeamNum == LTeamNum && USettings::Show_Squad;
+			bool showEnemy = TeamNum != LTeamNum && USettings::Show_Enemy;
+
+			if (USettings::radar_hack && showEnemy) {
 				bool True = true;
-				if (TeamNum != LTeamNum && USettings::Show_Enemy)
-					write<bool>(CurrentPawn, (C_CSPlayerPawn::m_entitySpottedState + EntitySpottedState_t::m_bSpotted), True);
+				write<bool>(CurrentPawn, (C_CSPlayerPawn::m_entitySpottedState + EntitySpottedState_t::m_bSpotted), True);
 			}
-			if (USettings::FilledBox_Esp) {
+
+			if (!isVisible) continue;
+
+			float boxWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 4 : height / 4;
+
+			if (USettings::FilledBox_Esp && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings::Squad_FilledBox_Esp_Color : USettings::Enemy_FilledBox_Esp_Color;
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (fFlag == CROUCHING) {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
-					}
-					else {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							DrawFilledRect(feetpos, height, height / 4, color);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							DrawFilledRect(feetpos, height, height / 4, color);
-					}
-				}
+				DrawFilledRect(feetpos, height, boxWidth, color);
 			}
-			if (USettings::SnaplLine_Esp) {
+
+			if (USettings::SnaplLine_Esp && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings::Squad_SnaplLine_Esp_Color : USettings::Enemy_SnaplLine_Esp_Color;
-				if (USettings::SnaplLine_Esp_End_Point) {
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
-				}
-				else {
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
-				}
+				Vector2 endPoint = USettings::SnaplLine_Esp_End_Point ? headpos : feetpos;
+				DrawLine(USettings::SnaplLine_Esp_Start_Point, endPoint, color, USettings::SnaplLine_Esp_Thickness, true);
 			}
-			if (USettings::Box_ESP) {
+
+			if (USettings::Box_ESP && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box_Esp_Color : USettings::Enemy_Box_Esp_Color;
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (fFlag == CROUCHING) {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
-					}
-					else {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
-					}
-				}
+				drawbox(feetpos, height, boxWidth, color, USettings::Box_Esp_Thickness);
 			}
-			if (USettings::Bone_Esp) {
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;/*
-					for (int j = 0; j < 32; j++) {
-						Vector2 Bonepos = E->GetBonePos(BoneArray, j);
-						sprintf_s(number, sizeof(number), "%d", j);
-						DrawString(Bonepos, ImColor(255, 255, 255), 2, number);
-					}*/
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
-				}
+
+			if (USettings::Bone_Esp && (showSquad || showEnemy)) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;
+				DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
 			}
-			if (USettings::HealthBar_ESP) {
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (fFlag == CROUCHING) {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-					}
-					else {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-					}
-				}
+
+			if (USettings::HealthBar_ESP && (showSquad || showEnemy)) {
+				float healthRatio = (float)health / E->GetMaxHealth(CurrentPawn);
+				float barWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 3.6f : height / 3.6f;
+				drawhealthbar(feetpos, height * healthRatio, barWidth, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
 			}
-			if (USettings::ArmorBar_ESP) {
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (fFlag == CROUCHING) {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-					}
-					else {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-					}
-				}
+
+			if (USettings::ArmorBar_ESP && (showSquad || showEnemy)) {
+				int armor = E->GetArmor(CurrentPawn);
+				float armorRatio = (float)armor / E->GetMaxHealth(CurrentPawn);
+				float barWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 3.6f : height / 3.6f;
+				drawarmorbar(feetpos, height * armorRatio, barWidth, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
 			}
-			if (USettings::CornerBox_ESP) {
+
+			if (USettings::CornerBox_ESP && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings::Squad_CornerBox_Esp_Color : USettings::Enemy_CornerBox_Esp_Color;
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (fFlag == CROUCHING) {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-					}
-					else {
-						if (TeamNum == LTeamNum && USettings::Show_Squad)
-							DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-							DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-					}
-				}
+				float cornerWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 2 : height / 2;
+				DrawCornerEsp(cornerWidth, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
 			}
-			if (USettings::Name_ESP) {
+
+			if (USettings::Name_ESP && (showSquad || showEnemy)) {
+				char names[16];
 				ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
-				Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-				pos2.z += 84;
-				Vector2 posscreen2 = PosToScreen(pos2);
-				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Name_ESP_Color : USettings::Enemy_Name_ESP_Color;
-				if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						DrawString(posscreen2, color, 1, names);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						DrawString(posscreen2, color, 1, names);
+				Vector3 namePos = pos;
+				namePos.z += 84;
+				Vector2 nameScreen = PosToScreen(namePos);
+				if (nameScreen.x > 0 && nameScreen.y > 0 && nameScreen.x < X_Screen && nameScreen.y < Y_Screen) {
+					ImColor color = TeamNum == LTeamNum ? USettings::Squad_Name_ESP_Color : USettings::Enemy_Name_ESP_Color;
+					DrawString(nameScreen, color, 1, names);
 				}
 			}
-			if (USettings::Distance_Esp) {
-				Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-				pos2.z += 77;
-				Vector2 posscreen2 = PosToScreen(pos2);
-				sprintf_s(distance, sizeof(distance), "[%0.fm]", E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100);
-				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Distance_Esp_Color : USettings::Enemy_Distance_Esp_Color;
-				if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						DrawString(posscreen2, color, 2, distance);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						DrawString(posscreen2, color, 2, distance);
+
+			if (USettings::Distance_Esp && (showSquad || showEnemy)) {
+				Vector3 distPos = pos;
+				distPos.z += 77;
+				Vector2 distScreen = PosToScreen(distPos);
+				if (distScreen.x > 0 && distScreen.y > 0 && distScreen.x < X_Screen && distScreen.y < Y_Screen) {
+					char distance[32];
+					sprintf_s(distance, "[%0.fm]", E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100);
+					ImColor color = TeamNum == LTeamNum ? USettings::Squad_Distance_Esp_Color : USettings::Enemy_Distance_Esp_Color;
+					DrawString(distScreen, color, 2, distance);
 				}
 			}
-			if (USettings::GunName_Esp) {
-				short weaponDefinitionIndex; read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex);
-				if (weaponDefinitionIndex != -1) {
+
+			if (USettings::GunName_Esp && (showSquad || showEnemy)) {
+				short weaponDefinitionIndex;
+				if (read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex)) {
 					auto it = weaponMap.find(weaponDefinitionIndex);
-					Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-					pos2.z -= 10;
-					Vector2 posscreen2 = PosToScreen(pos2);
 					if (it != weaponMap.end()) {
-						ImColor color = TeamNum == LTeamNum ? USettings::Squad_GunName_Color : USettings::Enemy_GunName_Color;
-						if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-							if (TeamNum == LTeamNum && USettings::Show_Squad)
-								DrawString(posscreen2, color, 2, it->second.c_str());
-							else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-								DrawString(posscreen2, color, 2, it->second.c_str());
+						Vector3 gunPos = pos;
+						gunPos.z -= 10;
+						Vector2 gunScreen = PosToScreen(gunPos);
+						if (gunScreen.x > 0 && gunScreen.y > 0 && gunScreen.x < X_Screen && gunScreen.y < Y_Screen) {
+							ImColor color = TeamNum == LTeamNum ? USettings::Squad_GunName_Color : USettings::Enemy_GunName_Color;
+							DrawString(gunScreen, color, 2, it->second.c_str());
 						}
 					}
 				}
 			}
-			if (USettings::Box3D_Esp) {
+
+			if (USettings::Box3D_Esp && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box3D_Esp_Color : USettings::Enemy_Box3D_Esp_Color;
-				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-					if (TeamNum == LTeamNum && USettings::Show_Squad)
-						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
-					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
-				}
+				Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
 			}
 		}
 	}
+
 	if (USettings::Aimbot) {
-		if (USettings::ShowFov || USettings::FilledCircle) {
-			DWORD64 local = E->GetLocal();
-			if (local != NULL) {
-				int health = E->GetHealth(local);
-				if (health > 0 && health < 101) {
-					if (USettings::ShowFov)
-						DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::AimFov, USettings::FovThickness, USettings::FovColor);
-					if (USettings::FilledCircle)
-						ImGui::GetBackgroundDrawList()->AddCircleFilled(ImVec2(X_Screen / 2, Y_Screen / 2), USettings::AimFov, USettings::FilledCircleColor);
+		DWORD64 local = E->GetLocal();
+		if (local != NULL && E->GetHealth(local) > 0 && E->GetHealth(local) < 101) {
+			if (USettings::ShowFov || USettings::FilledCircle) {
+				ImVec2 screenCenter{ X_Screen / 2, Y_Screen / 2 };
+				if (USettings::ShowFov) {
+					DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::AimFov, USettings::FovThickness, USettings::FovColor);
+				}
+				if (USettings::FilledCircle) {
+					ImGui::GetBackgroundDrawList()->AddCircleFilled(screenCenter, USettings::AimFov, USettings::FilledCircleColor);
 				}
 			}
-		}
-	}
-	if (USettings::ShowTarget && USettings::Aimbot) {
-		int i = FindClosestEnemy();
-		if (i != 100) {
-			DWORD64 ent = E->GetEnt(FindClosestEnemy());
-			if (ent != NULL) {
-				DWORD64 sceneNode;
-				if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
-					DWORD64 BoneArray;
-					if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
-						Vector3 aimpos;
-						if (USettings::Head_Target)
-							aimpos = E->GetBonePos3D(BoneArray, bones::head);
-						if (USettings::Body_Target)
-							aimpos = E->GetBonePos3D(BoneArray, bones::spine);
-						aimpos.z -= 1.f;
-						Vector2 posscreen = PosToScreen(aimpos);
-						DrawLine({ X_Screen / 2, Y_Screen / 2 }, posscreen, USettings::TargetColor, USettings::TargetThickness, true);
+
+			if (USettings::ShowTarget) {
+				int closestEnemyIndex = FindClosestEnemy();
+				if (closestEnemyIndex != 100) {
+					DWORD64 ent = E->GetEnt(closestEnemyIndex);
+					if (ent != NULL) {
+						DWORD64 sceneNode, boneArray;
+						if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode) &&
+							read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, boneArray)) {
+
+							Vector3 aimPos = USettings::Head_Target ? 
+								E->GetBonePos3D(boneArray, bones::head) :
+								E->GetBonePos3D(boneArray, bones::spine);
+							aimPos.z -= 1.f;
+
+							Vector2 screenPos = PosToScreen(aimPos);
+							DrawLine({X_Screen / 2, Y_Screen / 2}, screenPos, USettings::TargetColor, USettings::TargetThickness, true);
+						}
 					}
 				}
 			}
 		}
 	}
+
 	if (USettings::Night_Mode) {
-		ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(X_Screen, Y_Screen), USettings::ColorBlack);
+		ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(X_Screen, Y_Screen), ImColor(0, 0, 0, 90));
 	}
 	if (USettings::FullBright_Mode) {
-		ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(X_Screen, Y_Screen), USettings::ColorWhite);
+		ImGui::GetBackgroundDrawList()->AddRectFilled(ImVec2(0, 0), ImVec2(X_Screen, Y_Screen), ImColor(255, 255, 255, 80));
 	}
-	if (USettings::DrawCrosshair) {
-		if (E->GetHealth(E->GetLocal()) > 0) {
-			if (!USettings::whennotaiming) {
-				if (USettings::Cross) {
-					DrawLine({ X_Screen / 2,(Y_Screen / 2) - USettings::Crosshair_size - 0.5f }, { X_Screen / 2,(Y_Screen / 2) + USettings::Crosshair_size - 0.5f }, USettings::Crosshair_Color, USettings::Crosshair_thickness, false);
-					DrawLine({ (X_Screen / 2) - USettings::Crosshair_size - 0.5f,Y_Screen / 2 }, { (X_Screen / 2) + USettings::Crosshair_size - 0.5f,Y_Screen / 2 }, USettings::Crosshair_Color, USettings::Crosshair_thickness, false);
-				}
-				if (USettings::circle) {
-					DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::Crosshair_size, USettings::Crosshair_thickness, USettings::Crosshair_Color);
-				}
+
+	if (USettings::DrawCrosshair && E->GetHealth(E->GetLocal()) > 0) {
+		bool shouldDraw = !USettings::whennotaiming || !GetAsyncKeyState(VK_RBUTTON);
+		if (shouldDraw) {
+			Vector2 screenCenter{ X_Screen / 2, Y_Screen / 2 };
+			float size = USettings::Crosshair_size;
+			float thickness = USettings::Crosshair_thickness;
+			ImColor color = USettings::Crosshair_Color;
+
+			if (USettings::Cross) {
+				DrawLine(
+					{screenCenter.x, screenCenter.y - size - 0.5f},
+					{screenCenter.x, screenCenter.y + size - 0.5f},
+					color, thickness, false
+				);
+				DrawLine(
+					{screenCenter.x - size - 0.5f, screenCenter.y},
+					{screenCenter.x + size - 0.5f, screenCenter.y},
+					color, thickness, false
+				);
 			}
-			else {
-				if (!GetAsyncKeyState(VK_RBUTTON)) {
-					if (USettings::Cross) {
-						DrawLine({ X_Screen / 2,(Y_Screen / 2) - USettings::Crosshair_size }, { X_Screen / 2,(Y_Screen / 2) + USettings::Crosshair_size }, USettings::Crosshair_Color, USettings::Crosshair_thickness, false);
-						DrawLine({ (X_Screen / 2) - USettings::Crosshair_size,Y_Screen / 2 }, { (X_Screen / 2) + USettings::Crosshair_size,Y_Screen / 2 }, USettings::Crosshair_Color, USettings::Crosshair_thickness, false);
-					}
-					if (USettings::circle) {
-						DrawCircle({ X_Screen / 2, Y_Screen / 2 }, USettings::Crosshair_size, USettings::Crosshair_thickness, USettings::Crosshair_Color);
-					}
-				}
+			if (USettings::circle) {
+				DrawCircle(screenCenter, size, thickness, color);
 			}
 		}
 	}

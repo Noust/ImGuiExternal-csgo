@@ -102,7 +102,7 @@ Vector3 Entitys::GetBonePos3D(DWORD64 BoneAddr, int BoneId) {
 bool Entitys::SetViewAngles(float Yaw, float Pitch) {
 	Vector2 Angle{ Pitch,Yaw };
 
-	if (!ProcessMgr.WriteMemory<Vector2>(client + ClientDll::dwViewAngles, Angle))
+	if (!write<Vector2>(client, ClientDll::dwViewAngles, Angle))
 		return false;
 
 	return true;
@@ -137,7 +137,6 @@ void Entitys::noFlash(DWORD64 ent) {
 	float flashtime; 
 	if (!read<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flashtime))
 		return;
-	if (flashtime > 0) {
+	if (flashtime > 0)
 		write<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flash);
-	}
 }

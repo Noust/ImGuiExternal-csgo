@@ -112,9 +112,7 @@ namespace USettings {
 	int ESP_Distance = 50;
 
 	bool Night_Mode = false;
-	ImColor ColorBlack = { 0,0,0,90 };
 	bool FullBright_Mode = false;
-	ImColor ColorWhite = { 255,255,255,80 };
 
 	//Player
 	bool BunnyHop = false;

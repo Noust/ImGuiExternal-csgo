@@ -132,6 +132,7 @@ void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width, int fF
 }
 
 void DrawCircle(Vector2 pos, int radious, int thickness, ImColor color) {
+	ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(pos.x, pos.y), radious, ImColor(0, 0, 0), 0, thickness + 2);
 	ImGui::GetBackgroundDrawList()->AddCircle(ImVec2(pos.x, pos.y), radious, color, 0, thickness);
 }
 
@@ -151,42 +152,37 @@ void DrawCornerEsp(float W, float H, Vector2 pos, ImColor color, int thickness) 
 }
 
 void DrawBones(DWORD64 BoneAddr, int thickness, ImColor color) {
-	using namespace bones;
-	Vector2 Headpos = E->GetBonePos(BoneAddr, head);
-	Vector2 Neckpos = E->GetBonePos(BoneAddr, neck);
-	Vector2 Spinepos = E->GetBonePos(BoneAddr, spine);
-	Vector2 Spine_1pos = E->GetBonePos(BoneAddr, spine_1);
-	Vector2 Hippos = E->GetBonePos(BoneAddr, hip);
-	Vector2 Left_shoulderpos = E->GetBonePos(BoneAddr, left_shoulder);
-	Vector2 Left_armpos = E->GetBonePos(BoneAddr, left_arm);
-	Vector2 Left_handpos = E->GetBonePos(BoneAddr, left_hand);
-	Vector2 Right_shoulderpos = E->GetBonePos(BoneAddr, right_shoulder);
-	Vector2 Right_armpos = E->GetBonePos(BoneAddr, right_arm);
-	Vector2 Right_handpos = E->GetBonePos(BoneAddr, right_hand);
-	Vector2 Left_hippos = E->GetBonePos(BoneAddr, left_hip);
-	Vector2 Left_kneepos = E->GetBonePos(BoneAddr, left_knee);
-	Vector2 Left_feetpos = E->GetBonePos(BoneAddr, left_feet);
-	Vector2 Right_hippos = E->GetBonePos(BoneAddr, right_hip);
-	Vector2 Right_kneepos = E->GetBonePos(BoneAddr, right_knee);
-	Vector2 Right_feetpos = E->GetBonePos(BoneAddr, right_feet);
+    const std::pair<int, int> bonePairs[] = {
+        {bones::head, bones::neck},
+        {bones::neck, bones::spine}, 
+        {bones::spine, bones::spine_1},
+        {bones::spine_1, bones::hip},
+        {bones::neck, bones::left_shoulder},
+        {bones::left_shoulder, bones::left_arm},
+        {bones::left_arm, bones::left_hand},
+        {bones::neck, bones::right_shoulder},
+        {bones::right_shoulder, bones::right_arm},
+        {bones::right_arm, bones::right_hand},
+        {bones::hip, bones::left_hip},
+        {bones::left_hip, bones::left_knee},
+        {bones::left_knee, bones::left_feet},
+        {bones::hip, bones::right_hip},
+        {bones::right_hip, bones::right_knee},
+        {bones::right_knee, bones::right_feet}
+    };
 
-	float radio = Neckpos.y - Headpos.y + (Neckpos.y - Headpos.y) * 0.5f;
-	if (Headpos.x > 0 && Headpos.y > 0 && Headpos.x < X_Screen && Headpos.y < Y_Screen)
-		DrawCircle(Headpos, radio, thickness, color);
-	DrawLine(Headpos, Neckpos, color, thickness, true);
-	DrawLine(Neckpos, Spinepos, color, thickness, true);
-	DrawLine(Spinepos, Spine_1pos, color, thickness, true);
-	DrawLine(Spine_1pos, Hippos, color, thickness, true);
-	DrawLine(Neckpos, Left_shoulderpos, color, thickness, true);
-	DrawLine(Left_shoulderpos, Left_armpos, color, thickness, true);
-	DrawLine(Left_armpos, Left_handpos, color, thickness, true);
-	DrawLine(Neckpos, Right_shoulderpos, color, thickness, true);
-	DrawLine(Right_shoulderpos, Right_armpos, color, thickness, true);
-	DrawLine(Right_armpos, Right_handpos, color, thickness, true);
-	DrawLine(Hippos, Left_hippos, color, thickness, true);
-	DrawLine(Left_hippos, Left_kneepos, color, thickness, true);
-	DrawLine(Left_kneepos, Left_feetpos, color, thickness, true);
-	DrawLine(Hippos, Right_hippos, color, thickness, true);
-	DrawLine(Right_hippos, Right_kneepos, color, thickness, true);
-	DrawLine(Right_kneepos, Right_feetpos, color, thickness, true);
+    Vector2 headPos = E->GetBonePos(BoneAddr, bones::head);
+    
+	if (headPos.x > 0 || headPos.y > 0 || headPos.x < X_Screen || headPos.y < Y_Screen) {
+		float distanceToHead = E->GetCameraPos().dist(E->GetBonePos3D(BoneAddr, bones::head));
+		float headRadius = 43 * (100 / distanceToHead);
+		DrawCircle(headPos, headRadius, thickness, color);
+	}
+
+    Vector2 startPos, endPos;
+    for (const auto& [bone1, bone2] : bonePairs) {
+        startPos = E->GetBonePos(BoneAddr, bone1);
+        endPos = E->GetBonePos(BoneAddr, bone2);
+        DrawLine(startPos, endPos, color, thickness, true);
+    }
 }

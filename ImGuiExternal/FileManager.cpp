@@ -91,9 +91,7 @@ void FManager::ReadSettings() {
         archivo.read(reinterpret_cast<char*>(&USettings::Box3D_Width), sizeof(USettings::Box3D_Width));
         archivo.read(reinterpret_cast<char*>(&USettings::ESP_Distance), sizeof(USettings::ESP_Distance));
         archivo.read(reinterpret_cast<char*>(&USettings::Night_Mode), sizeof(USettings::Night_Mode));
-        archivo.read(reinterpret_cast<char*>(&USettings::ColorBlack), sizeof(USettings::ColorBlack));
         archivo.read(reinterpret_cast<char*>(&USettings::FullBright_Mode), sizeof(USettings::FullBright_Mode));
-        archivo.read(reinterpret_cast<char*>(&USettings::ColorWhite), sizeof(USettings::ColorWhite));
         archivo.read(reinterpret_cast<char*>(&USettings::BunnyHop), sizeof(USettings::BunnyHop));
         archivo.read(reinterpret_cast<char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.read(reinterpret_cast<char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
@@ -181,9 +179,7 @@ void FManager::SaveSettings() {
         archivo.write(reinterpret_cast<const char*>(&USettings::Box3D_Width), sizeof(USettings::Box3D_Width));
         archivo.write(reinterpret_cast<const char*>(&USettings::ESP_Distance), sizeof(USettings::ESP_Distance));
         archivo.write(reinterpret_cast<const char*>(&USettings::Night_Mode), sizeof(USettings::Night_Mode));
-        archivo.write(reinterpret_cast<const char*>(&USettings::ColorBlack), sizeof(USettings::ColorBlack));
         archivo.write(reinterpret_cast<const char*>(&USettings::FullBright_Mode), sizeof(USettings::FullBright_Mode));
-        archivo.write(reinterpret_cast<const char*>(&USettings::ColorWhite), sizeof(USettings::ColorWhite));
         archivo.write(reinterpret_cast<const char*>(&USettings::BunnyHop), sizeof(USettings::BunnyHop));
         archivo.write(reinterpret_cast<const char*>(&USettings::window_animation), sizeof(USettings::window_animation));
         archivo.write(reinterpret_cast<const char*>(&USettings::navigationwindow_animation), sizeof(USettings::navigationwindow_animation));
