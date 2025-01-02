@@ -71,99 +71,111 @@ bool initializeProcessHandle() {
 
 template<typename T>
 bool read(DWORD64 address, T& value) {
-	if (!handleInitialized) {
-		if (!handleInitialized) {
-			printf("[ERROR] Failed to initialize process handle\n");
-			return false;
-		}
-	}
-	try {
-		// Rotaci�n din�mica de funciones
-		static const auto getRandom = [address]() -> DWORD64 {
-			return __rdtsc() ^ ((DWORD64)(&address) * 0x1337);
-			};
+    if (!process) {
+        printf("[ERROR] Process handle is invalid\n");
+        return false;
+    }
+    if (!handleInitialized) {
+        printf("[ERROR] Process handle not initialized\n");
+        return false;
+    }
+    if (address == 0) {
+        printf("[ERROR] Invalid memory address (0x0)\n");
+        return false;
+    }
 
-		// Ofuscaci�n del nombre del m�dulo
-		static const wchar_t* modName = (getRandom() & 1) ?
-			L"\x6E\x74\x64\x6C\x6C\x2E\x64\x6C\x6C" : // "ntdll.dll" encoded
-			L"ntdll.dll";
+    __try {
+        SIZE_T bytesRead = 0;
+        if constexpr (std::is_array_v<T>) {
+            // Para arrays, leemos directamente en el buffer proporcionado
+            if (!ReadProcessMemory(process, reinterpret_cast<LPCVOID>(address), &value, sizeof(T), &bytesRead)) {
+                printf("[ERROR] ReadProcessMemory failed for array at address 0x%llx (Error: %lu)\n", 
+                       address, GetLastError());
+                return false;
+            }
+        } else {
+            // Para tipos normales, usamos un buffer temporal
+            T buffer = T();
+            if (!ReadProcessMemory(process, reinterpret_cast<LPCVOID>(address), &buffer, sizeof(T), &bytesRead)) {
+                DWORD error = GetLastError();
+                printf("[ERROR] ReadProcessMemory failed at address 0x%llx (Error: %lu - %s)\n", 
+                       address, error, (error == 299 ? "Partial Copy" : "Unknown Error"));
+                return false;
+            }
+            value = buffer;
+        }
 
-		// Obtenci�n din�mica del handle
-		static const auto ntdll = GetModuleHandleW(modName);
-		if (!ntdll) {
-			printf("[ERROR] Failed to get ntdll handle\n");
-			return false;
-		}
+        if (bytesRead != sizeof(T)) {
+            printf("[ERROR] Incomplete read at address 0x%llx (Read %zu bytes of %zu)\n", 
+                   address, bytesRead, sizeof(T));
+            return false;
+        }
 
-		// Obtenci�n de la funci�n con reintentos
-		static auto NtReadVM = reinterpret_cast<NTSTATUS(NTAPI*)(
-			HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T)>(
-				GetProcAddress(ntdll, "NtReadVirtualMemory"));
-
-		// Si no se obtuvo, reintentamos hasta 3 veces
-		int retryCount = 0;
-		while (!NtReadVM && retryCount < 10) {
-			Sleep(50); // Peque�a pausa entre intentos
-			NtReadVM = reinterpret_cast<NTSTATUS(NTAPI*)(
-				HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T)>(
-					GetProcAddress(ntdll, "NtReadVirtualMemory"));
-			retryCount++;
-		}
-
-		// Si despu�s de los reintentos sigue sin obtenerse
-		if (!NtReadVM) {
-			printf("[ERROR] Failed to get NtReadVirtualMemory function\n");
-			return false;
-		}
-
-		T buffer;
-		SIZE_T bytesRead = 0;
-
-		// Lecturas se�uelo aleatorias
-		if (getRandom() & 3) {
-			const auto fakeOffset = getRandom() & 0xFFFF;
-			volatile T dummy;
-			for (int i = 0; i < (getRandom() & 7); i++) {
-				if (getRandom() & 1) {
-					Sleep((getRandom() & 3) + 1);
-					NtReadVM(process, (PVOID)(address + fakeOffset),
-						(PVOID)&dummy, sizeof(T), nullptr);
-				}
-			}
-		}
-
-		// Timing aleatorio entre operaciones
-		if (getRandom() & 1) {
-			Sleep((getRandom() & 1) + 1);
-		}
-
-		// Lectura real con verificaci�n de integridad
-		const auto status = NtReadVM(process, (PVOID)address, &buffer,
-			sizeof(T), &bytesRead);
-
-		// Verificaci�n con ruido
-		const bool success = NT_SUCCESS(status) &&
-			bytesRead == sizeof(T) &&
-			(getRandom() % 100 > 5);
-
-		if (success) {
-			value = buffer;
-			return true;
-		}
-
-		if (!NT_SUCCESS(status)) {
-			printf("[ERROR] NtReadVirtualMemory failed with status: 0x%X\n", status);
-		}
-		if (bytesRead != sizeof(T)) {
-			printf("[ERROR] Incomplete read: got %zu bytes, expected %zu\n", bytesRead, sizeof(T));
-		}
-
-		return false;
-	}
-	catch (...) {
-		printf("[ERROR] Unhandled exception in ReadMemoryQuiet\n");
-		return false;
-	}
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        printf("[ERROR] Exception occurred while reading memory at address 0x%llx\n", address);
+        return false;
+    }
 }
 
-#define GetHandle(name) reinterpret_cast<DWORD64>(ProcessMgr.GetProcessModuleHandle(name));
+// Sobrecarga específica para arrays multidimensionales usando std::array
+template<typename T, size_t Rows, size_t Cols>
+bool read(DWORD64 address, std::array<std::array<T, Cols>, Rows>& value) {
+    if (!process) {
+        printf("[ERROR] Process handle is invalid\n");
+        return false;
+    }
+    if (!handleInitialized) {
+        printf("[ERROR] Process handle not initialized\n");
+        return false;
+    }
+    if (address == 0) {
+        printf("[ERROR] Invalid memory address (0x0)\n");
+        return false;
+    }
+
+    __try {
+        SIZE_T bytesRead = 0;
+        const size_t totalSize = sizeof(T) * Rows * Cols;
+        
+        if (!ReadProcessMemory(process, reinterpret_cast<LPCVOID>(address), 
+                             value.data(), totalSize, &bytesRead)) {
+            printf("[ERROR] ReadProcessMemory failed for array[%zu][%zu] at address 0x%llx (Error: %lu)\n", 
+                   Rows, Cols, address, GetLastError());
+            return false;
+        }
+        
+        if (bytesRead != totalSize) {
+            printf("[ERROR] Incomplete read for array[%zu][%zu] at address 0x%llx (Read %zu bytes of %zu)\n", 
+                   Rows, Cols, address, bytesRead, totalSize);
+            return false;
+        }
+        
+        return true;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        printf("[ERROR] Exception occurred while reading array[%zu][%zu] at address 0x%llx\n", 
+               Rows, Cols, address);
+        return false;
+    }
+}
+
+HMODULE GetProcessModuleHandle(std::string ModuleName)
+{
+	MODULEENTRY32 ModuleInfoPE;
+	ModuleInfoPE.dwSize = sizeof(MODULEENTRY32);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, getProcessID(targetProcessName));
+	Module32First(hSnapshot, &ModuleInfoPE);
+	do {
+		if (strcmp(ModuleInfoPE.szModule, ModuleName.c_str()) == 0)
+		{
+			CloseHandle(hSnapshot);
+			return ModuleInfoPE.hModule;
+		}
+	} while (Module32Next(hSnapshot, &ModuleInfoPE));
+	CloseHandle(hSnapshot);
+	return 0;
+}
+
+#define GetHandle(name) reinterpret_cast<DWORD64>(GetProcessModuleHandle(name));

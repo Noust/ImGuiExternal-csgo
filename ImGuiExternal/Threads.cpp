@@ -13,21 +13,21 @@ void GetClients() {
 
 		DWORD64 CameraServices;
 		if (!read<DWORD64>(LocalPlayer + C_BasePlayerPawn::m_pCameraServices, CameraServices))
-			return;
+			return;/*
 		if (USettings::fov_changer) {
 			int currentfov; read<int>(CameraServices + CCSPlayerBase_CameraServices::m_iFOV, currentfov);
 			bool isscoped; read<bool>(LocalPlayer + C_CSPlayerPawn::m_bIsScoped, isscoped);
 			if (!isscoped && currentfov != USettings::fov_value) {
 				write<int>(CameraServices + CCSPlayerBase_CameraServices::m_iFOV, USettings::fov_value);
 			}
-		}
+		}*//*
 		if (USettings::BunnyHop) {
 			int fFlag; read<int>(LocalPlayer + C_BaseEntity::m_fFlags, fFlag);
 			E->bunnyHop(fFlag);
-		}
+		}*//*
 		if (USettings::No_Flash) {
 			E->noFlash(LocalPlayer);
-		}
+		}*/
 	}
 }
 
@@ -87,10 +87,10 @@ void Aimbot(int index) {
 				if (USettings::Body_Target)
 					aimpos = E->GetBonePos3D(BoneArray, bones::spine);
 				aimpos.z -= 1.f;
-				if (PosToScreen(aimpos).dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov)
-					AimBot(LocalPlayer, E->GetCameraPos(), aimpos);
+				Vector2 aimpos2d = PosToScreen(aimpos);
+				if (aimpos2d.dist({ X_Screen / 2,Y_Screen / 2 }) < USettings::AimFov)
+					AimBot(aimpos2d);
 			}
-			setRCS();
 		}
 	}
 }

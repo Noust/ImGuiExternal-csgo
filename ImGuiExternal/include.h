@@ -11,7 +11,6 @@
 #include <filesystem>
 #include <unordered_map>
 #include <dwmapi.h>
-#include "ProcessManager.hpp"
 #include "Overlay.hpp"
 #include <DirectX/d3d9.h>
 #include <DirectX/D3dx9tex.h>
@@ -28,6 +27,8 @@ float Y_Screen;
 DWORD64 client;
 #define M_PI       3.14159265358979323846   // pi
 
+#include "simulate.h"
+#include "ProcessManager.hpp"
 #include "image.h"
 #include "Vector.h"
 #include "Settings.h"
@@ -38,7 +39,6 @@ Entitys* E;
 #include "bones.h"
 #include "Draw.h"
 #include "FileManager.h"
-#include "simulate.h"
 #include "Threads.h"
 #include "guns.h"
 #include "Aimbot.hpp"
