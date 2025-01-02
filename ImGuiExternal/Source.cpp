@@ -25,10 +25,10 @@ int FindClosestEnemy() {
 			for (int i = 0; i < 64; i++) {
 				DWORD64 EntityAddr = E->GetEnt(i);
 				if (EntityAddr != 0) {
-					DWORD64 sceneNode; read<DWORD64>(EntityAddr + C_BaseEntity::m_pGameSceneNode, sceneNode);
+					DWORD64 sceneNode; read<DWORD64>(EntityAddr, C_BaseEntity::m_pGameSceneNode, sceneNode);
 					if (sceneNode == NULL)
 						continue;
-					DWORD64 BoneArray; read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray);
+					DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
 					if (BoneArray == NULL)
 						continue;
 					float EnHealth = E->GetHealth(EntityAddr); 
@@ -170,6 +170,7 @@ WNDCLASSEX windowClass;
 HWND targetWindow;
 HWND overlayWindow;
 
+std::string targetProcessName = "cs2.exe";
 std::string ovarlayName = generateRandomString(generateRandomInt(30, 100));
 
 IDirect3DDevice9Ex* pDevice = nullptr;
@@ -308,15 +309,15 @@ void renderImGui() {
 				for (int i = 0; i < 64; i++) {
 					DWORD64 CurrentController = E->GetEntInfo(i);
 					if (CurrentController != NULL) {
-						DWORD64 moneyservices; read<DWORD64>(CurrentController + CCSPlayerController::m_pInGameMoneyServices, moneyservices);
+						DWORD64 moneyservices; read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices);
 						if (moneyservices != NULL) {
-							if (read(CurrentController + CBasePlayerController::m_iszPlayerName, name)) {
+							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
 								int account;
-								if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
+								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account)) {
 									int cashSpent;
-									if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
+									if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent)) {
 										int cashSpentTotal;
-										if (read<int>(moneyservices + CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
+										if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iTotalCashSpent, cashSpentTotal)) {
 											if (ImGui::TreeNode(name)) {
 												ImGui::TextColored(ImColor(255, 255, 255), "Account: %d", account);
 												ImGui::TextColored(ImColor(255, 255, 255), "Cash Spent this round: %d", cashSpent);
@@ -614,7 +615,7 @@ void renderImGui() {
 		for (int i = 0; i < 64; i++) {
 			DWORD64 CurrentController = E->GetEntInfo(i);
 			DWORD64 CurrentPawn = E->GetEnt(i);
-			/*DWORD64 LocalPlayer = E->GetLocal();
+			DWORD64 LocalPlayer = E->GetLocal();
 
 			if (LocalPlayer == NULL)
 				continue;
@@ -633,207 +634,207 @@ void renderImGui() {
 			int LTeamNum = E->GetTeam(LocalPlayer);
 
 			if (LocalPlayer == CurrentPawn)
-				continue;*/
+				continue;
 
-			//if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance)
-			//	continue;
+			if (E->GetPos(CurrentPawn).dist(E->GetPos(LocalPlayer)) / 100 > USettings::ESP_Distance)
+				continue;
 
-			//DWORD64 CameraServices; read<DWORD64>(LocalPlayer + C_BasePlayerPawn::m_pCameraServices, CameraServices);
-			//if (CameraServices == NULL)
-			//	continue;
-			//DWORD64 sceneNode; read<DWORD64>(CurrentPawn + C_BaseEntity::m_pGameSceneNode, sceneNode);
-			//if (sceneNode == NULL)
-			//	continue;
-			//DWORD64 BoneArray; read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray);
-			//if (BoneArray == NULL)
-			//	continue;
-			//DWORD64 CurrentWeapon; read<DWORD64>(CurrentPawn + C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon);
-			//if (CurrentWeapon == NULL)
-			//	continue;
+			DWORD64 CameraServices; read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices);
+			if (CameraServices == NULL)
+				continue;
+			DWORD64 sceneNode; read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode);
+			if (sceneNode == NULL)
+				continue;
+			DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
+			if (BoneArray == NULL)
+				continue;
+			DWORD64 CurrentWeapon; read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon);
+			if (CurrentWeapon == NULL)
+				continue;
 
-			//Vector3 pos = E->GetBonePos3D(BoneArray, 28); Vector2 feetpos = PosToScreen(pos);
-			//Vector3 pos1 = E->GetBonePos3D(BoneArray, 28);
-			//int fFlag;
-			//if (!read<int>(LocalPlayer + C_BaseEntity::m_fFlags, fFlag))
-			//	continue;
-			//if (fFlag == CROUCHING)
-			//	pos1.z += 55;
-			//else
-			//	pos1.z += 70;
+			Vector3 pos = E->GetBonePos3D(BoneArray, 28); Vector2 feetpos = PosToScreen(pos);
+			Vector3 pos1 = E->GetBonePos3D(BoneArray, 28);
+			int fFlag;
+			if (!read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag))
+				continue;
+			if (fFlag == CROUCHING)
+				pos1.z += 55;
+			else
+				pos1.z += 70;
 
-			//Vector2 headpos = PosToScreen(pos1);
-			//float height = feetpos.y - headpos.y;
+			Vector2 headpos = PosToScreen(pos1);
+			float height = feetpos.y - headpos.y;
 
-			///*if (USettings::radar_hack) {
-			//	bool True = true;
-			//	if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//		write<bool>(CurrentPawn, (C_CSPlayerPawn::m_entitySpottedState + EntitySpottedState_t::m_bSpotted), True);
-			//}*/
-			//if (USettings::FilledBox_Esp) {
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_FilledBox_Esp_Color : USettings::Enemy_FilledBox_Esp_Color;
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (fFlag == CROUCHING) {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
-			//		}
-			//		else {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				DrawFilledRect(feetpos, height, height / 4, color);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				DrawFilledRect(feetpos, height, height / 4, color);
-			//		}
-			//	}
-			//}
-			//if (USettings::SnaplLine_Esp) {
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_SnaplLine_Esp_Color : USettings::Enemy_SnaplLine_Esp_Color;
-			//	if (USettings::SnaplLine_Esp_End_Point) {
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
-			//	}
-			//	else {
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
-			//	}
-			//}
-			//if (USettings::Box_ESP) {
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box_Esp_Color : USettings::Enemy_Box_Esp_Color;
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (fFlag == CROUCHING) {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
-			//		}
-			//		else {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
-			//		}
-			//	}
-			//}
-			//if (USettings::Bone_Esp) {
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;/*
-			//		for (int j = 0; j < 32; j++) {
-			//			Vector2 Bonepos = E->GetBonePos(BoneArray, j);
-			//			sprintf_s(number, sizeof(number), "%d", j);
-			//			DrawString(Bonepos, ImColor(255, 255, 255), 2, number);
-			//		}*/
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
-			//	}
-			//}
-			//if (USettings::HealthBar_ESP) {
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (fFlag == CROUCHING) {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-			//		}
-			//		else {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
-			//		}
-			//	}
-			//}
-			//if (USettings::ArmorBar_ESP) {
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (fFlag == CROUCHING) {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-			//		}
-			//		else {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
-			//		}
-			//	}
-			//}
-			//if (USettings::CornerBox_ESP) {
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_CornerBox_Esp_Color : USettings::Enemy_CornerBox_Esp_Color;
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (fFlag == CROUCHING) {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-			//		}
-			//		else {
-			//			if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//				DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-			//			else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//				DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
-			//		}
-			//	}
-			//}
-			//if (USettings::Name_ESP) {
-			//	read<char[16]>(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
-			//	Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-			//	pos2.z += 84;
-			//	Vector2 posscreen2 = PosToScreen(pos2);
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_Name_ESP_Color : USettings::Enemy_Name_ESP_Color;
-			//	if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			DrawString(posscreen2, color, 1, names);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			DrawString(posscreen2, color, 1, names);
-			//	}
-			//}
-			//if (USettings::Distance_Esp) {
-			//	Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-			//	pos2.z += 77;
-			//	Vector2 posscreen2 = PosToScreen(pos2);
-			//	sprintf_s(distance, sizeof(distance), "[%0.fm]", E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100);
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_Distance_Esp_Color : USettings::Enemy_Distance_Esp_Color;
-			//	if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			DrawString(posscreen2, color, 2, distance);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			DrawString(posscreen2, color, 2, distance);
-			//	}
-			//}
-			//if (USettings::GunName_Esp) {
-			//	short weaponDefinitionIndex; read<short>(CurrentWeapon + (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex);
-			//	if (weaponDefinitionIndex != -1) {
-			//		auto it = weaponMap.find(weaponDefinitionIndex);
-			//		Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
-			//		pos2.z -= 10;
-			//		Vector2 posscreen2 = PosToScreen(pos2);
-			//		if (it != weaponMap.end()) {
-			//			ImColor color = TeamNum == LTeamNum ? USettings::Squad_GunName_Color : USettings::Enemy_GunName_Color;
-			//			if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
-			//				if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//					DrawString(posscreen2, color, 2, it->second.c_str());
-			//				else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//					DrawString(posscreen2, color, 2, it->second.c_str());
-			//			}
-			//		}
-			//	}
-			//}
-			//if (USettings::Box3D_Esp) {
-			//	ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box3D_Esp_Color : USettings::Enemy_Box3D_Esp_Color;
-			//	if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
-			//		if (TeamNum == LTeamNum && USettings::Show_Squad)
-			//			Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
-			//		else if (TeamNum != LTeamNum && USettings::Show_Enemy)
-			//			Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
-			//	}
-			//}
+			if (USettings::radar_hack) {
+				bool True = true;
+				if (TeamNum != LTeamNum && USettings::Show_Enemy)
+					write<bool>(CurrentPawn, (C_CSPlayerPawn::m_entitySpottedState + EntitySpottedState_t::m_bSpotted), True);
+			}
+			if (USettings::FilledBox_Esp) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_FilledBox_Esp_Color : USettings::Enemy_FilledBox_Esp_Color;
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (fFlag == CROUCHING) {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							DrawFilledRect(feetpos, height, (height + height * 0.25) / 4, color);
+					}
+					else {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							DrawFilledRect(feetpos, height, height / 4, color);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							DrawFilledRect(feetpos, height, height / 4, color);
+					}
+				}
+			}
+			if (USettings::SnaplLine_Esp) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_SnaplLine_Esp_Color : USettings::Enemy_SnaplLine_Esp_Color;
+				if (USettings::SnaplLine_Esp_End_Point) {
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawLine(USettings::SnaplLine_Esp_Start_Point, headpos, color, USettings::SnaplLine_Esp_Thickness, true);
+				}
+				else {
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawLine(USettings::SnaplLine_Esp_Start_Point, feetpos, color, USettings::SnaplLine_Esp_Thickness, true);
+				}
+			}
+			if (USettings::Box_ESP) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box_Esp_Color : USettings::Enemy_Box_Esp_Color;
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (fFlag == CROUCHING) {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawbox(feetpos, height, (height + height * 0.25) / 4, color, USettings::Box_Esp_Thickness);
+					}
+					else {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawbox(feetpos, height, height / 4, color, USettings::Box_Esp_Thickness);
+					}
+				}
+			}
+			if (USettings::Bone_Esp) {
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					ImColor color = TeamNum == LTeamNum ? USettings::Squad_Bone_Esp_Color : USettings::Enemy_Bone_Esp_Color;/*
+					for (int j = 0; j < 32; j++) {
+						Vector2 Bonepos = E->GetBonePos(BoneArray, j);
+						sprintf_s(number, sizeof(number), "%d", j);
+						DrawString(Bonepos, ImColor(255, 255, 255), 2, number);
+					}*/
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawBones(BoneArray, USettings::Bone_Esp_Thickness, color);
+				}
+			}
+			if (USettings::HealthBar_ESP) {
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (fFlag == CROUCHING) {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
+					}
+					else {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawhealthbar(feetpos, height * E->GetHealth(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, HealthBarColor(CurrentPawn), USettings::HealthBar_Esp_Thickness);
+					}
+				}
+			}
+			if (USettings::ArmorBar_ESP) {
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (fFlag == CROUCHING) {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), (height + height * 0.25) / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
+					}
+					else {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							drawarmorbar(feetpos, height * E->GetArmor(CurrentPawn) / E->GetMaxHealth(CurrentPawn), height / 3.6f, ArmorBarColor(CurrentPawn), USettings::ArmorBar_Esp_Thickness);
+					}
+				}
+			}
+			if (USettings::CornerBox_ESP) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_CornerBox_Esp_Color : USettings::Enemy_CornerBox_Esp_Color;
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (fFlag == CROUCHING) {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							DrawCornerEsp((height + height * 0.25) / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
+					}
+					else {
+						if (TeamNum == LTeamNum && USettings::Show_Squad)
+							DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
+						else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+							DrawCornerEsp(height / 2, height, feetpos, color, USettings::Box_CornerEsp_Thickness);
+					}
+				}
+			}
+			if (USettings::Name_ESP) {
+				ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
+				Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
+				pos2.z += 84;
+				Vector2 posscreen2 = PosToScreen(pos2);
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Name_ESP_Color : USettings::Enemy_Name_ESP_Color;
+				if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawString(posscreen2, color, 1, names);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawString(posscreen2, color, 1, names);
+				}
+			}
+			if (USettings::Distance_Esp) {
+				Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
+				pos2.z += 77;
+				Vector2 posscreen2 = PosToScreen(pos2);
+				sprintf_s(distance, sizeof(distance), "[%0.fm]", E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100);
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Distance_Esp_Color : USettings::Enemy_Distance_Esp_Color;
+				if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						DrawString(posscreen2, color, 2, distance);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						DrawString(posscreen2, color, 2, distance);
+				}
+			}
+			if (USettings::GunName_Esp) {
+				short weaponDefinitionIndex; read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex);
+				if (weaponDefinitionIndex != -1) {
+					auto it = weaponMap.find(weaponDefinitionIndex);
+					Vector3 pos2 = E->GetBonePos3D(BoneArray, 28);
+					pos2.z -= 10;
+					Vector2 posscreen2 = PosToScreen(pos2);
+					if (it != weaponMap.end()) {
+						ImColor color = TeamNum == LTeamNum ? USettings::Squad_GunName_Color : USettings::Enemy_GunName_Color;
+						if (posscreen2.x > 0 && posscreen2.y > 0 && posscreen2.x < X_Screen && posscreen2.y < Y_Screen) {
+							if (TeamNum == LTeamNum && USettings::Show_Squad)
+								DrawString(posscreen2, color, 2, it->second.c_str());
+							else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+								DrawString(posscreen2, color, 2, it->second.c_str());
+						}
+					}
+				}
+			}
+			if (USettings::Box3D_Esp) {
+				ImColor color = TeamNum == LTeamNum ? USettings::Squad_Box3D_Esp_Color : USettings::Enemy_Box3D_Esp_Color;
+				if (feetpos.x > 0 && feetpos.y > 0 && feetpos.x < X_Screen && feetpos.y < Y_Screen) {
+					if (TeamNum == LTeamNum && USettings::Show_Squad)
+						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
+					else if (TeamNum != LTeamNum && USettings::Show_Enemy)
+						Draw3DBox(CurrentPawn, color, USettings::Box3D_Esp_Thickness, USettings::Box3D_Width, fFlag);
+				}
+			}
 		}
 	}
 	if (USettings::Aimbot) {
@@ -856,9 +857,9 @@ void renderImGui() {
 			DWORD64 ent = E->GetEnt(FindClosestEnemy());
 			if (ent != NULL) {
 				DWORD64 sceneNode;
-				if (read<DWORD64>(ent + C_BaseEntity::m_pGameSceneNode, sceneNode)) {
+				if (read<DWORD64>(ent, C_BaseEntity::m_pGameSceneNode, sceneNode)) {
 					DWORD64 BoneArray;
-					if (read<DWORD64>(sceneNode + (CSkeletonInstance::m_modelState + 0x80), BoneArray)) {
+					if (read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray)) {
 						Vector3 aimpos;
 						if (USettings::Head_Target)
 							aimpos = E->GetBonePos3D(BoneArray, bones::head);
@@ -1042,11 +1043,19 @@ bool createDirectX() {
 int main(int argc, char* argv[]) {
 	X_Screen = GetSystemMetrics(SM_CXSCREEN);
 	Y_Screen = GetSystemMetrics(SM_CYSCREEN);
-	client = GetHandle("client.dll");
-	printf("Client.dll: 0x%llx\n", client);
 	if (createConsole == false) {
 		ShowWindow(GetConsoleWindow(), SW_HIDE);
+	}	
+	auto ProcessStatus = ProcessMgr.Attach("cs2.exe");
+
+	if (ProcessStatus != StatusCode::SUCCEED)
+	{
+		std::cout << "[ERROR] Failed to attach process, StatusCode:" << ProcessStatus << std::endl;
+		system("pause");
+		return 0;
 	}
+	std::cout << "[Game] Pid:" << ProcessMgr.ProcessID;
+	client = GetHandle("client.dll");
 
 	windowInfo = new WindowInfo();
 	bool WindowFocus = false;
@@ -1068,6 +1077,5 @@ int main(int argc, char* argv[]) {
 	}
 	createOverlay();
 	createDirectX();
-	initializeProcessHandle();
 	mainLoop();
 }
