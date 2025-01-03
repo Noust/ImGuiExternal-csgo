@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <dwmapi.h>
 #include "ProcessManager.hpp"
-#include "Overlay.hpp"
 #include <DirectX/d3d9.h>
 #include <DirectX/D3dx9tex.h>
 #include <ImGui/imgui.h>
@@ -34,7 +33,7 @@ DWORD64 client;
 #include "WorldToScreen.h"
 Entitys* E;
 #include "bones.h"
-#include "Draw.h"
+#include "Overlay.hpp"
 #include "FileManager.h"
 #include "simulate.h"
 #include "Threads.h"

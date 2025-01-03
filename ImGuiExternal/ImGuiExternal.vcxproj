@@ -155,7 +155,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Draw.cpp" />
     <ClCompile Include="Entitys.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui.cpp" />
@@ -173,7 +172,6 @@
   <ItemGroup>
     <ClInclude Include="Aimbot.hpp" />
     <ClInclude Include="bones.h" />
-    <ClInclude Include="Draw.h" />
     <ClInclude Include="Entitys.h" />
     <ClInclude Include="FileManager.h" />
     <ClInclude Include="guns.h" />

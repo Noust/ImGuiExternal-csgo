@@ -28,7 +28,6 @@
     <ClCompile Include="Libraries\ImGui\Include\ImGui\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Draw.cpp" />
     <ClCompile Include="Entitys.cpp" />
     <ClCompile Include="FileManager.cpp" />
     <ClCompile Include="simulate.cpp" />
@@ -63,7 +62,6 @@
     <ClInclude Include="Overlay.hpp" />
     <ClInclude Include="include.h" />
     <ClInclude Include="bones.h" />
-    <ClInclude Include="Draw.h" />
     <ClInclude Include="Entitys.h" />
     <ClInclude Include="FileManager.h" />
     <ClInclude Include="guns.h" />

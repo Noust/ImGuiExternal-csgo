@@ -16,49 +16,43 @@ sking changer*/
 IDirect3DTexture9* pTexture = nullptr;
 
 int FindClosestEnemy() {
-	int ClosestEntity = 100;
-	DWORD64 LocalPlayer = E->GetLocal();
-	if (LocalPlayer != NULL) {
-		if (E->GetHealth(E->GetLocal()) > 0 && E->GetHealth(E->GetLocal()) < 101) {
-			float Finish;
-			float Closest = FLT_MAX;
-			for (int i = 0; i < 64; i++) {
-				DWORD64 EntityAddr = E->GetEnt(i);
-				if (EntityAddr != 0) {
-					DWORD64 sceneNode; read<DWORD64>(EntityAddr, C_BaseEntity::m_pGameSceneNode, sceneNode);
-					if (sceneNode == NULL)
-						continue;
-					DWORD64 BoneArray; read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray);
-					if (BoneArray == NULL)
-						continue;
-					float EnHealth = E->GetHealth(EntityAddr); 
-					if (EnHealth == 0 || EnHealth > 100)
-						continue;
-					float Distance = E->GetBonePos3D(BoneArray, 28).dist(E->GetPos(E->GetLocal())) / 100; 
-					if (Distance > USettings::ESP_Distance)
-						continue;
-					if (E->GetTeam(EntityAddr) == E->GetTeam(E->GetLocal()))
-						continue;
-					Vector3 aimpos;
-					if (USettings::Head_Target)
-						aimpos = E->GetBonePos3D(BoneArray, bones::head);
-					if (USettings::Body_Target)
-						aimpos = E->GetBonePos3D(BoneArray, bones::spine);
-					aimpos.z -= 1.f;
-					Vector2 posscreen = PosToScreen(aimpos);
-					if (posscreen.dist({ X_Screen / 2,Y_Screen / 2 }) > USettings::AimFov)
-						continue;
+    DWORD64 LocalPlayer = E->GetLocal();
+    if (!LocalPlayer || E->GetHealth(LocalPlayer) <= 0 || E->GetHealth(LocalPlayer) > 100)
+        return 100;
 
-					Finish = posscreen.dist({ X_Screen / 2, Y_Screen / 2 });
-					if (Finish < Closest) {
-						Closest = Finish;
-						ClosestEntity = i;
-					}
-				}
-			}
-		}
-	}
-	return ClosestEntity;
+    float closestDistance = FLT_MAX;
+    int closestEntity = 100;
+    const Vector3 localPos = E->GetPos(LocalPlayer);
+    const int localTeam = E->GetTeam(LocalPlayer);
+    const Vector2 screenCenter = { X_Screen / 2.0f, Y_Screen / 2.0f };
+
+    for (int i = 0; i < 64; i++) {
+        DWORD64 entityAddr = E->GetEnt(i);
+        DWORD64 sceneNode, boneArray;
+        
+        if (!entityAddr || 
+            !read<DWORD64>(entityAddr, C_BaseEntity::m_pGameSceneNode, sceneNode) || !sceneNode ||
+            !read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, boneArray) || !boneArray)
+            continue;
+
+        float entityHealth = E->GetHealth(entityAddr);
+        if (entityHealth <= 0 || entityHealth > 100 || E->GetTeam(entityAddr) == localTeam)
+            continue;
+
+        if (E->GetBonePos3D(boneArray, 28).dist(localPos) / 100.0f > USettings::ESP_Distance)
+            continue;
+
+        Vector3 aimPos = E->GetBonePos3D(boneArray, USettings::Head_Target ? bones::head : bones::spine);
+        Vector2 screenPos = PosToScreen(aimPos);
+        float screenDist = screenPos.dist(screenCenter);
+
+        if (screenDist <= USettings::AimFov && screenDist < closestDistance) {
+            closestDistance = screenDist;
+            closestEntity = i;
+        }
+    }
+
+    return closestEntity;
 }
 
 void Colors() {
@@ -290,7 +284,7 @@ void renderImGui() {
 				ImGui::Combo("Aim Key", &USettings::AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL");
 				
 				ImGui::Text("Core Settings");
-				ImGui::SliderFloat("Smoothness", &USettings::Smooth, 0, 0.7f);
+				ImGui::SliderFloat("Smoothness", &USettings::Smooth, 0, 0.8f);
 				ImGui::SliderFloat("FOV", &USettings::AimFov, 10, 1920);
 
 				ImGui::Text("Target Selection");
@@ -317,7 +311,6 @@ void renderImGui() {
 			ImGui::PopStyleColor();
 		}
 
-		// Rest of the menus remain the same but with consistent styling
 		else if (USettings::MenuWindow == 2) {
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
@@ -862,7 +855,6 @@ void renderImGui() {
 							Vector3 aimPos = USettings::Head_Target ? 
 								E->GetBonePos3D(boneArray, bones::head) :
 								E->GetBonePos3D(boneArray, bones::spine);
-							aimPos.z -= 1.f;
 
 							Vector2 screenPos = PosToScreen(aimPos);
 							DrawLine({X_Screen / 2, Y_Screen / 2}, screenPos, USettings::TargetColor, USettings::TargetThickness, true);
@@ -953,7 +945,7 @@ void mainLoop() {
 		renderImGui();
 		GetClients();
 		TriggerBot();
-		if (USettings::Aimbot) {
+		if (USettings::Aimbot && !isMenuVisible) {
 			int i = FindClosestEnemy();
 			if (i == 100)
 				continue;
