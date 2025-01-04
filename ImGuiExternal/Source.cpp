@@ -974,13 +974,15 @@ void mainLoop() {
 			pDevice->Reset(&gD3DPresentParams);
 		}
 		renderImGui();
-		GetClients();
-		TriggerBot();
-		if (USettings.Aimbot && !isMenuVisible) {
-			int i = FindClosestEnemy();
-			if (i == 100)
-				continue;
-			Aimbot(FindClosestEnemy());
+		if (!isMenuVisible) {
+			GetClients();
+			TriggerBot();
+			if (USettings.Aimbot) {
+				int i = FindClosestEnemy();
+				if (i == 100)
+					continue;
+				Aimbot(i);
+			}
 		}
 	}
 
