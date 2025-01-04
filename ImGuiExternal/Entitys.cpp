@@ -99,15 +99,6 @@ Vector3 Entitys::GetBonePos3D(DWORD64 BoneAddr, int BoneId) {
 	return BonePos;
 }
 
-bool Entitys::SetViewAngles(float Yaw, float Pitch) {
-	Vector2 Angle{ Pitch,Yaw };
-
-	if (!write<Vector2>(client, ClientDll::dwViewAngles, Angle))
-		return false;
-
-	return true;
-}
-
 Vector2 Entitys::GetViewAnles() {
 	Vector2 ViewAngles;
 	if (!read<Vector2>(client, ClientDll::dwViewAngles, ViewAngles))
@@ -123,20 +114,17 @@ Vector3 Entitys::GetCameraPos() {
 }
 
 void Entitys::bunnyHop(int flags) {
-	if (GetAsyncKeyState(VK_SPACE) && flags & bhopInAir) {
-		Sleep(14);
-		write<int>(client, buttons::jump, PLUS_JUMP);
-	}
-	else {
-		write<int>(client, buttons::jump, MINUS_JUMP);
-	}
-}
-
-void Entitys::noFlash(DWORD64 ent) {
-	float flash = 0.f;
-	float flashtime; 
-	if (!read<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flashtime))
-		return;
-	if (flashtime > 0)
-		write<float>(ent, C_CSPlayerPawnBase::m_flFlashBangTime, flash);
+    static bool blockInput = false;
+    
+    if (GetAsyncKeyState(VK_SPACE)) {
+        if (!blockInput) {
+            blockInput = true;
+            if (flags & bhopInAir) {
+                s->SimKey(VK_SPACE);
+            }
+        }
+    }
+    else {
+        blockInput = false;
+    }
 }

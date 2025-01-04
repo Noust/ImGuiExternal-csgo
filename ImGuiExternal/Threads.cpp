@@ -1,7 +1,7 @@
 #include "include.h"
 
 void GetClients() {
-    if (!USettings::fov_changer && !USettings::BunnyHop && !USettings::No_Flash)
+    if (!USettings.BunnyHop)
         return;
 
     DWORD64 LocalPlayer = E->GetLocal();
@@ -12,37 +12,19 @@ void GetClients() {
     if (health < 1 || health > 100) 
         return;
 
-    // Handle FOV changer
-    if (USettings::fov_changer) {
-        DWORD64 CameraServices;
-        if (read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices)) {
-            int currentFov;
-            bool isScoped;
-            if (read<int>(CameraServices, CCSPlayerBase_CameraServices::m_iFOV, currentFov) &&
-                read<bool>(LocalPlayer, C_CSPlayerPawn::m_bIsScoped, isScoped)) {
-                if (!isScoped && currentFov != USettings::fov_value) {
-                    write<int>(CameraServices, CCSPlayerBase_CameraServices::m_iFOV, USettings::fov_value);
-                }
-            }
-        }
-    }
 
-    if (USettings::BunnyHop) {
+    if (USettings.BunnyHop) {
         int flags;
         if (read<int>(LocalPlayer, C_BaseEntity::m_fFlags, flags)) {
             E->bunnyHop(flags);
         }
     }
-
-    if (USettings::No_Flash) {
-        E->noFlash(LocalPlayer);
-    }
 }
 
 void TriggerBot() {
-	if (USettings::triggerbot) {
+	if (USettings.triggerbot) {
 
-		if (!GetAsyncKeyState(USettings::THotKey))
+		if (!GetAsyncKeyState(USettings.THotKey))
 			return;
 
 		DWORD64 LocalPlayer = E->GetLocal();
@@ -64,13 +46,13 @@ void TriggerBot() {
 		if (health < 1 || health > 100)
 			return;
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(USettings::triggerbot_delayms));
+		std::this_thread::sleep_for(std::chrono::milliseconds(USettings.triggerbot_delayms));
 		s->SimClick();
 	}
 }
 
 void Aimbot(int index) {
-	if (!USettings::Aimbot || (!USettings::Head_Target && !USettings::Body_Target))
+	if (!USettings.Aimbot || (!USettings.Head_Target && !USettings.Body_Target))
 		return;
 
 	DWORD64 LocalPlayer = E->GetLocal();
@@ -81,7 +63,7 @@ void Aimbot(int index) {
 	if (health < 1 || health > 100)
 		return;
 
-	if (GetAsyncKeyState(USettings::HotKey)) {
+	if (GetAsyncKeyState(USettings.HotKey)) {
 		DWORD64 CurrentPawn = E->GetEnt(index);
 		DWORD64 sceneNode;
 		if (!read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode) || !sceneNode)
@@ -91,11 +73,11 @@ void Aimbot(int index) {
 		if (!read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray) || !BoneArray)
 			return;
 
-		Vector3 aimpos = USettings::Head_Target ? 
+		Vector3 aimpos = USettings.Head_Target ? 
 			E->GetBonePos3D(BoneArray, bones::head) :
 			E->GetBonePos3D(BoneArray, bones::spine);
 
-		if (PosToScreen(aimpos).dist({ X_Screen / 2, Y_Screen / 2 }) < USettings::AimFov) {
+		if (PosToScreen(aimpos).dist({ X_Screen / 2, Y_Screen / 2 }) < USettings.AimFov) {
 			AimBot(LocalPlayer, E->GetCameraPos(), aimpos);
 		}
 	}

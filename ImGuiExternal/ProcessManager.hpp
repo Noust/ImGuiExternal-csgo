@@ -22,7 +22,6 @@ private:
 	typedef HANDLE(WINAPI* pOpenProcess)(DWORD, BOOL, DWORD);
 	typedef BOOL(WINAPI* pCloseHandle)(HANDLE);
 	typedef BOOL(WINAPI* pReadProcessMemory)(HANDLE, LPCVOID, LPVOID, SIZE_T, SIZE_T*);
-	typedef BOOL(WINAPI* pWriteProcessMemory)(HANDLE, LPVOID, LPCVOID, SIZE_T, SIZE_T*);
 	typedef BOOL(WINAPI* pGetExitCodeProcess)(HANDLE, LPDWORD);
 	typedef HANDLE(WINAPI* pCreateToolhelp32Snapshot)(DWORD, DWORD);
 	typedef BOOL(WINAPI* pProcess32First)(HANDLE, LPPROCESSENTRY32W);
@@ -33,7 +32,6 @@ private:
 	pOpenProcess NtOpenProcess;
 	pCloseHandle NtCloseHandle; 
 	pReadProcessMemory NtReadProcessMemory;
-	pWriteProcessMemory NtWriteProcessMemory;
 	pGetExitCodeProcess NtGetExitCodeProcess;
 	pCreateToolhelp32Snapshot NtCreateToolhelp32Snapshot;
 	pProcess32First NtProcess32First;
@@ -46,7 +44,6 @@ private:
 		NtOpenProcess = (pOpenProcess)GetProcAddress(k32, "OpenProcess");
 		NtCloseHandle = (pCloseHandle)GetProcAddress(k32, "CloseHandle");
 		NtReadProcessMemory = (pReadProcessMemory)GetProcAddress(k32, "ReadProcessMemory");
-		NtWriteProcessMemory = (pWriteProcessMemory)GetProcAddress(k32, "WriteProcessMemory");
 		NtGetExitCodeProcess = (pGetExitCodeProcess)GetProcAddress(k32, "GetExitCodeProcess");
 		NtCreateToolhelp32Snapshot = (pCreateToolhelp32Snapshot)GetProcAddress(k32, "CreateToolhelp32Snapshot");
 		NtProcess32First = (pProcess32First)GetProcAddress(k32, "Process32FirstW");
@@ -75,7 +72,7 @@ public:
 		ProcessID = this->GetProcessID(ProcessName);
 		_is_invalid_val(ProcessID, 0, FAILE_PROCESSID);
 
-		hProcess = NtOpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, ProcessID);
+		hProcess = NtOpenProcess(PROCESS_VM_READ | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, ProcessID);
 		_is_invalid_ptr(hProcess, FAILE_HPROCESS);
 
 		ModuleAddress = reinterpret_cast<DWORD64>(this->GetProcessModuleHandle(ProcessName));
@@ -118,22 +115,6 @@ public:
 		_is_invalid_ptr(hProcess, false);
 		_is_invalid_val(ProcessID, 0, false);
 		return NtReadProcessMemory(hProcess, reinterpret_cast<LPCVOID>(Address), &Value, sizeof(ReadType), 0);
-	}
-
-	template <typename ReadType>
-	bool WriteMemory(DWORD64 Address, ReadType& Value, int Size)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-		return NtWriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(Address), &Value, Size, 0);
-	}
-
-	template <typename ReadType>
-	bool WriteMemory(DWORD64 Address, ReadType& Value)
-	{
-		_is_invalid_ptr(hProcess, false);
-		_is_invalid_val(ProcessID, 0, false);
-		return NtWriteProcessMemory(hProcess, reinterpret_cast<LPVOID>(Address), &Value, sizeof(ReadType), 0);
 	}
 
 	std::vector<DWORD64> SearchMemory(const std::string& Signature, DWORD64 StartAddress, DWORD64 EndAddress, int SearchNum = 1);
@@ -209,12 +190,6 @@ template <typename T>
 inline bool read(const DWORD64& Address, DWORD Offset, T& Data)
 {
 	return (Address != 0) && ProcessMgr.ReadMemory<T>(Address + Offset, Data);
-}
-
-template <typename T>
-inline bool write(const DWORD64& Address, DWORD Offset, T& Data)
-{
-	return (Address != 0) && ProcessMgr.WriteMemory<T>(Address + Offset, Data);
 }
 
 #define GetHandle(name) reinterpret_cast<DWORD64>(ProcessMgr.GetProcessModuleHandle(name));

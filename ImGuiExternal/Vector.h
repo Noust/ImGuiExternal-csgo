@@ -47,6 +47,13 @@ struct Vector3 {
 	{
 		return { x - Vec3_.x,y - Vec3_.y,z - Vec3_.z };
 	}
+	Vector3 operator-(const Vector3& other) const {
+        return Vector3{
+            x - other.x,
+            y - other.y,
+            z - other.z
+        };
+    }
 	Vector3 operator*(Vector3 Vec3_)
 	{
 		return { x * Vec3_.x,y * Vec3_.y,z * Vec3_.z };

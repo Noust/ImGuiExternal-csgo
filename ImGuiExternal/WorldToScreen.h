@@ -1,5 +1,6 @@
 #pragma once
 #include "include.h"
 
-bool WorldToScreen(Vector3 pos, Vector2& posscreen, float Matrix[16]);
+Vector2 TopDownToScreen(const Vector3& pos);
+bool WorldToScreen(const Vector3& Pos, Vector2& ToPos);
 Vector2 PosToScreen(Vector3 pos);

@@ -1,6 +1,35 @@
 #include "include.h"
 float Matrix[4][4]{};
 
+Vector2 TopDownToScreen(const Vector3& pos) {
+    DWORD64 LocalPlayer = E->GetLocal();
+    Vector3 localPos = E->GetPos(LocalPlayer);
+    Vector2 viewAngles = E->GetViewAnles();
+    
+    Vector3 relativePos = pos - localPos;
+
+    float yawRad = -viewAngles.y * (M_PI / 180.0f);
+    
+    float rotatedX = -(relativePos.x * sin(yawRad) + relativePos.y * cos(yawRad));
+    float rotatedY = -(relativePos.x * cos(yawRad) - relativePos.y * sin(yawRad));
+    
+    Vector2 screenPos;
+    screenPos.x = USettings.center.x + (rotatedX * USettings.scale);
+    screenPos.y = USettings.center.y + (rotatedY * USettings.scale);
+
+    float distanceFromCenter = screenPos.dist(USettings.center);
+    if (distanceFromCenter <= USettings.radarRadius) {
+        ImGui::GetBackgroundDrawList()->AddCircleFilled(
+            ImVec2(screenPos.x, screenPos.y),
+            3.0f,
+            ImColor(255, 0, 0, 255)
+        );
+    }
+    
+    return screenPos;
+}
+
+
 bool WorldToScreen(const Vector3& Pos, Vector2& ToPos)
 {
 	float View = 0.f;

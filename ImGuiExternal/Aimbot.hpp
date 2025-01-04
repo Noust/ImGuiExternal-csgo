@@ -25,20 +25,20 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
     float Yaw = atan2f(OppPos.y, OppPos.x) * 57.295779513f - E->GetViewAnles().y;
     float Pitch = -atan(OppPos.z / Distance) * 57.295779513f - E->GetViewAnles().x;
 
-    const float smoothFactor = 1.0f - USettings::Smooth;
+    const float smoothFactor = 1.0f - USettings.Smooth;
     Vector2 currentView = E->GetViewAnles();
     Yaw = Yaw * smoothFactor + currentView.y;
     Pitch = Pitch * smoothFactor + currentView.x;
 
     int ShotsFired;
-    if (read<int>(local, C_CSPlayerPawn::m_iShotsFired, ShotsFired) && ShotsFired > USettings::RCSBullet) {
+    if (read<int>(local, C_CSPlayerPawn::m_iShotsFired, ShotsFired) && ShotsFired > USettings.RCSBullet) {
         C_UTL_VECTOR AimPunchCache;
         if (read<C_UTL_VECTOR>(local, C_CSPlayerPawn::m_aimPunchCache, AimPunchCache)) {
             if (AimPunchCache.Count > 0 && AimPunchCache.Count <= 0xFFFF) {
                 Vector2 PunchAngle;
                 if (ProcessMgr.ReadMemory<Vector2>(AimPunchCache.Data + (AimPunchCache.Count - 1) * sizeof(Vector3), PunchAngle)) {
-                    Yaw -= PunchAngle.y * USettings::RCSScale.x;
-                    Pitch -= PunchAngle.x * USettings::RCSScale.y;
+                    Yaw -= PunchAngle.y * USettings.RCSScale.x;
+                    Pitch -= PunchAngle.x * USettings.RCSScale.y;
                 }
             }
         }
@@ -51,5 +51,5 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
 }
 
 void setRCS() {
-	USettings::RCSScale = { 0.7f + (0.7f - USettings::Smooth) * 2,0.58f + (0.7f - USettings::Smooth) * 2 };
+	USettings.RCSScale = { 0.7f + (0.7f - USettings.Smooth) * 2,0.58f + (0.7f - USettings.Smooth) * 2 };
 }
