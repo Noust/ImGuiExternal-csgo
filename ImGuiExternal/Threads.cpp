@@ -12,6 +12,8 @@ void GetClients() {
     if (health < 1 || health > 100) 
         return;
 
+	if (!GetAsyncKeyState(VK_LMENU))
+		return;
 
     if (USettings.BunnyHop) {
         int flags;

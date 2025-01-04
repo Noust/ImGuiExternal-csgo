@@ -1,7 +1,8 @@
 #pragma once
 #include "include.h"
+int JUMPING = 65664;
 int STANDING = 65665;
-int CROUCHING = 65667;
+int CROUCHING = 65683;
 
 int PLUS_JUMP = 65537;
 int MINUS_JUMP = 256;
@@ -26,9 +27,4 @@ public:
 	Vector2 GetViewAnles();
 	Vector3 GetCameraPos();
 	void bunnyHop(int flags);
-};
-
-
-inline namespace sharedData {
-	inline int bhopInAir = (1 << 0);
 };

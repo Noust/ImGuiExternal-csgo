@@ -1,7 +1,7 @@
 #include "include.h"
 float Matrix[4][4]{};
 
-Vector2 TopDownToScreen(const Vector3& pos) {
+void TopDownToScreen(const Vector3& pos) {
     DWORD64 LocalPlayer = E->GetLocal();
     Vector3 localPos = E->GetPos(LocalPlayer);
     Vector2 viewAngles = E->GetViewAnles();
@@ -25,8 +25,6 @@ Vector2 TopDownToScreen(const Vector3& pos) {
             ImColor(255, 0, 0, 255)
         );
     }
-    
-    return screenPos;
 }
 
 

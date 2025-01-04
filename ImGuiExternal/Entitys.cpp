@@ -114,17 +114,27 @@ Vector3 Entitys::GetCameraPos() {
 }
 
 void Entitys::bunnyHop(int flags) {
-    static bool blockInput = false;
-    
-    if (GetAsyncKeyState(VK_SPACE)) {
-        if (!blockInput) {
-            blockInput = true;
-            if (flags & bhopInAir) {
-                s->SimKey(VK_SPACE);
-            }
-        }
-    }
-    else {
-        blockInput = false;
-    }
+	static bool jumping = false;
+	
+	if (flags == STANDING) {
+		if (!jumping) {
+			// Presionar espacio
+			INPUT input = { 0 };
+			input.type = INPUT_KEYBOARD;
+			input.ki.wVk = VK_SPACE;
+			SendInput(1, &input, sizeof(INPUT));
+			
+			// Pequeña espera para asegurar que el juego registre la pulsación
+			Sleep(10);
+			
+			// Soltar espacio
+			input.ki.dwFlags = KEYEVENTF_KEYUP;
+			SendInput(1, &input, sizeof(INPUT));
+			
+			jumping = true;
+		}
+	}
+	else {
+		jumping = false;
+	}
 }

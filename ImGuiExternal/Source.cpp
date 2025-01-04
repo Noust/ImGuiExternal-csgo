@@ -691,9 +691,38 @@ void renderImGui() {
 		ImGui::End();
 		SetFocus(overlayWindow);
 	}
+
 	if (USettings.ArmorBar_ESP || USettings.GunName_Esp || USettings.SnaplLine_Esp || USettings.Box_ESP || USettings.Name_ESP || USettings.Bone_Esp || USettings.Distance_Esp || USettings.HealthBar_ESP || USettings.CornerBox_ESP || USettings.FilledBox_Esp || USettings.Box3D_Esp || USettings.radar_hack) {
 		DWORD64 LocalPlayer = E->GetLocal();
 		if (!LocalPlayer) return;
+
+		if (USettings.radar_hack) {
+			auto drawList = ImGui::GetBackgroundDrawList();
+			const ImVec2 center(USettings.center.x, USettings.center.y);
+			
+			// Cache trig calculations
+			static const float cos225 = cosf(225.0f * (M_PI / 180.0f));
+			static const float sin225 = sinf(225.0f * (M_PI / 180.0f));
+			static const float cos315 = cosf(315.0f * (M_PI / 180.0f));
+			static const float sin315 = sinf(315.0f * (M_PI / 180.0f));
+
+			// Draw radar elements
+			drawList->AddCircleFilled(center, USettings.radarRadius, IM_COL32(0, 0, 0, 128));
+			drawList->AddCircleFilled(center, 4.0f, IM_COL32(0, 255, 0, 255));
+
+			// Draw lines using cached trig values
+			const float radius = USettings.radarRadius;
+			drawList->AddLine(
+				center,
+				ImVec2(center.x + cos225 * radius, center.y + sin225 * radius),
+				IM_COL32(0, 255, 0, 180)
+			);
+			drawList->AddLine(
+				center,
+				ImVec2(center.x + cos315 * radius, center.y + sin315 * radius),
+				IM_COL32(0, 255, 0, 180)
+			);
+		}
 
 		for (int i = 0; i < 64; i++) {
 			DWORD64 CurrentController = E->GetEntInfo(i);
@@ -725,7 +754,7 @@ void renderImGui() {
 			Vector3 pos1 = pos;
 
 			int fFlag;
-			if (!read<int>(LocalPlayer, C_BaseEntity::m_fFlags, fFlag))
+			if (!read<int>(CurrentPawn, C_BaseEntity::m_fFlags, fFlag))
 				continue;
 
 			pos1.z += (fFlag == CROUCHING) ? 55 : 70;
@@ -737,9 +766,7 @@ void renderImGui() {
 			bool showEnemy = TeamNum != LTeamNum && USettings.Show_Enemy;
 
 			if (USettings.radar_hack && showEnemy) {
-				bool True = true;
-				TopDownToScreen(pos);/*
-				write<bool>(CurrentPawn, (C_CSPlayerPawn::m_entitySpottedState + EntitySpottedState_t::m_bSpotted), True);*/
+				TopDownToScreen(pos);
 			}
 
 			if (!isVisible) continue;
@@ -899,20 +926,6 @@ void renderImGui() {
 				DrawCircle(screenCenter, size, thickness, color);
 			}
 		}
-	}
-
-	if (USettings.radar_hack) {
-		ImGui::GetBackgroundDrawList()->AddCircleFilled(
-			ImVec2(USettings.center.x, USettings.center.y),
-			USettings.radarRadius,
-			ImColor(0, 0, 0, 128)
-		);
-
-		ImGui::GetBackgroundDrawList()->AddCircleFilled(
-			ImVec2(USettings.center.x, USettings.center.y),
-			4.0f,
-			ImColor(0, 255, 0, 255)
-		);
 	}
 
 	ImGui::EndFrame();
