@@ -11,6 +11,6 @@ void sim::SimKey(int KeyID) {
 }
 
 void sim::SimClick() {
-    mouse_event(MOUSEEVENTF_LEFTDOWN, 1920 / 2, 1080 / 2, 0, 0);
-    mouse_event(MOUSEEVENTF_LEFTUP, 1920 / 2, 1080 / 2, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTDOWN, X_Screen / 2, Y_Screen / 2, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, X_Screen / 2, Y_Screen / 2, 0, 0);
 }

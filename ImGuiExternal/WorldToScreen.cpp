@@ -1,10 +1,9 @@
 #include "include.h"
 float Matrix[4][4]{};
 
-void TopDownToScreen(const Vector3& pos) {
-    DWORD64 LocalPlayer = E->GetLocal();
-    Vector3 localPos = E->GetPos(LocalPlayer);
-    Vector2 viewAngles = E->GetViewAnles();
+void TopDownToScreen(const Vector3& pos, DWORD64 local) {
+    Vector3 localPos = E->GetPos(local);
+    Vector2 viewAngles = E->GetViewAnles(local);
     
     Vector3 relativePos = pos - localPos;
 

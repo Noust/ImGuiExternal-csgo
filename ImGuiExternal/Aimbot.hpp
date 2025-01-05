@@ -22,11 +22,11 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
     Vector3 OppPos = AimPos - LocalPos;
     float Distance = sqrt(OppPos.x * OppPos.x + OppPos.y * OppPos.y);
     
-    float Yaw = atan2f(OppPos.y, OppPos.x) * 57.295779513f - E->GetViewAnles().y;
-    float Pitch = -atan(OppPos.z / Distance) * 57.295779513f - E->GetViewAnles().x;
+    float Yaw = atan2f(OppPos.y, OppPos.x) * 57.295779513f - E->GetViewAnles(local).y;
+    float Pitch = -atan(OppPos.z / Distance) * 57.295779513f - E->GetViewAnles(local).x;
 
     const float smoothFactor = 1.0f - USettings.Smooth;
-    Vector2 currentView = E->GetViewAnles();
+    Vector2 currentView = E->GetViewAnles(local);
     Yaw = Yaw * smoothFactor + currentView.y;
     Pitch = Pitch * smoothFactor + currentView.x;
 
@@ -46,7 +46,8 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
 
     Vector3 Angles = clampAngles({Pitch, Yaw});
     ImVec2 screenOffset = AngleToScreenOffset(Angles.y, Angles.x, currentView.y, currentView.x);
-    
+
+    std::this_thread::sleep_for(std::chrono::microseconds(50));
     mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(screenOffset.x), static_cast<DWORD>(screenOffset.y), 0, 0);
 }
 

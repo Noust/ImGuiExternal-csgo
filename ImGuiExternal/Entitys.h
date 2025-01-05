@@ -24,7 +24,7 @@ public:
 	int GetMaxHealth(DWORD64 ent);
 	Vector2 GetBonePos(DWORD64 BoneAddr, int BoneId);
 	Vector3 GetBonePos3D(DWORD64 BoneAddr, int BoneId);
-	Vector2 GetViewAnles();
+	Vector2 GetViewAnles(DWORD64 addr);
 	Vector3 GetCameraPos();
 	void bunnyHop(int flags);
 };

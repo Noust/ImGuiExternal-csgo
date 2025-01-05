@@ -1,38 +1,56 @@
 #include "include.h"
-
+#define listEntry2Offset(handle)  0x8 * ((handle & 0x7FFF) >> 9) + 0x10
 
 DWORD64 Entitys::GetEnt(int index) {
-	DWORD64 entitylist; read<DWORD64>(client, ClientDll::dwEntityList, entitylist);
-	DWORD64 listentry;
-	if (read<DWORD64>(entitylist, 0x10, listentry)) {
-		DWORD64 CurrentController;
-		if (read<DWORD64>(listentry, (index * 0x78), CurrentController)) {
-			int pawnhandle;
-			if (read<int>(CurrentController, CCSPlayerController::m_hPlayerPawn, pawnhandle)) {
-				DWORD64 ListEntry2; read<DWORD64>(entitylist, (0x8 * ((pawnhandle & 0x7FFF) >> 9) + 0x10), ListEntry2);
-				DWORD64 CurrentPawn;
-				if (read<DWORD64>(ListEntry2, (0x78 * (pawnhandle & 0x1FF)), CurrentPawn)) {
-					return CurrentPawn;
-				}
-			}
-		}
-	}
-	return NULL;
+    DWORD64 entitylist;
+    if (!read<DWORD64>(client, ClientDll::dwEntityList, entitylist))
+        return NULL;
+
+    DWORD64 listentry;
+    if (!read<DWORD64>(entitylist, 0x10, listentry))
+        return NULL;
+
+    DWORD64 CurrentController;
+    if (!read<DWORD64>(listentry, (index * 0x78), CurrentController))
+        return NULL;
+
+    int pawnhandle;
+    if (!read<int>(CurrentController, CCSPlayerController::m_hPlayerPawn, pawnhandle))
+        return NULL;
+
+    DWORD64 ListEntry2;
+    if (!read<DWORD64>(entitylist, listEntry2Offset(pawnhandle), ListEntry2))
+        return NULL;
+
+    const DWORD64 currentPawnOffset = 0x78 * (pawnhandle & 0x1FF);
+    DWORD64 CurrentPawn;
+    if (!read<DWORD64>(ListEntry2, currentPawnOffset, CurrentPawn))
+        return NULL;
+
+    return CurrentPawn;
 }
 
 DWORD64 Entitys::GetEntt(int handle) {
-	DWORD64 entitylist; read<DWORD64>(client, ClientDll::dwEntityList, entitylist);
-	DWORD64 listentry;
-	if (read<DWORD64>(entitylist, 0x10, listentry)) {
-		if (handle != NULL) {
-			DWORD64 ListEntry2; read<DWORD64>(entitylist, (0x8 * ((handle & 0x7FFF) >> 9) + 0x10), ListEntry2);
-			DWORD64 CurrentPawn;
-			if (read<DWORD64>(ListEntry2, (0x78 * (handle & 0x1FF)), CurrentPawn)) {
-				return CurrentPawn;
-			}
-		}
-	}
-	return NULL;
+    if (handle == NULL)
+        return NULL;
+
+    DWORD64 entitylist;
+    if (!read<DWORD64>(client, ClientDll::dwEntityList, entitylist))
+        return NULL;
+
+    DWORD64 listentry;
+    if (!read<DWORD64>(entitylist, 0x10, listentry))
+        return NULL;
+
+    DWORD64 ListEntry2;
+    if (!read<DWORD64>(entitylist, listEntry2Offset(handle), ListEntry2))
+        return NULL;
+
+    DWORD64 CurrentPawn;
+    if (!read<DWORD64>(ListEntry2, (0x78 * (handle & 0x1FF)), CurrentPawn))
+        return NULL;
+
+    return CurrentPawn;
 }
 
 DWORD64 Entitys::GetLocal() {
@@ -99,9 +117,9 @@ Vector3 Entitys::GetBonePos3D(DWORD64 BoneAddr, int BoneId) {
 	return BonePos;
 }
 
-Vector2 Entitys::GetViewAnles() {
+Vector2 Entitys::GetViewAnles(DWORD64 addr) {
 	Vector2 ViewAngles;
-	if (!read<Vector2>(client, ClientDll::dwViewAngles, ViewAngles))
+	if (!read<Vector2>(addr, C_CSPlayerPawnBase::m_angEyeAngles, ViewAngles))
 		return { 0,0 };
 	return ViewAngles;
 }
@@ -118,6 +136,7 @@ void Entitys::bunnyHop(int flags) {
 	
 	if (flags == STANDING) {
 		if (!jumping) {
+			Sleep(7);
 			// Presionar espacio
 			INPUT input = { 0 };
 			input.type = INPUT_KEYBOARD;

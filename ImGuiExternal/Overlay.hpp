@@ -1,7 +1,5 @@
 #pragma once
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_dx9.h>
-#include <ImGui/imgui_impl_win32.h>
+#include "include.h"
 
 void inputHandler();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -141,8 +139,22 @@ void drawbox(Vector2 pos, float height, float width, ImColor color, float thickn
 	DrawLine({ pos.x - width,pos.y - height }, { pos.x - width,pos.y }, color, thickness, false);
 }
 
-void DrawString(Vector2 pos, ImColor color, float divide, const char* text) {
-	ImGui::GetBackgroundDrawList()->AddText(ImVec2(pos.x - ImGui::CalcTextSize(text).x / 2, pos.y - ImGui::CalcTextSize(text).y / divide), color, text);
+void DrawString(Vector2 pos, ImColor color, float scale, const char* text) {
+	// Get font size scaled by distance
+	float fontSize = ImGui::GetFontSize() * scale;
+
+	// Calculate text dimensions for centering
+	ImVec2 textSize = ImGui::CalcTextSize(text);
+	ImVec2 textPos = ImVec2(pos.x - (textSize.x * scale) / 2, pos.y);
+
+	// Draw the text with scaling
+	ImGui::GetForegroundDrawList()->AddText(
+		ImGui::GetFont(),
+		fontSize,
+		textPos,
+		color,
+		text
+	);
 }
 
 void drawhealthbar(Vector2 pos, float height, float width, ImColor color, float thickness) {
@@ -182,53 +194,55 @@ void DrawFilledRect(Vector2 pos, float height, float width, ImColor color) {
 }
 
 void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width, int fFlags) {
-	const Vector3 basePos = E->GetPos(Ents);
+    const Vector3 basePos = E->GetPos(Ents);
+    if (!basePos.x && !basePos.y && !basePos.z) return;
 
-	Vector2 screenPos = PosToScreen(basePos);
-	if (screenPos.x < 0 || screenPos.y < 0 || screenPos.x > X_Screen || screenPos.y > Y_Screen)
-		return;
+    Vector2 screenPos = PosToScreen(basePos);
+    if (screenPos.x < 0 || screenPos.y < 0 || screenPos.x > X_Screen || screenPos.y > Y_Screen)
+        return;
 
-	const float height = (fFlags == CROUCHING) ? 55.0f : 70.0f;
+    const Vector2 viewAngles = E->GetViewAnles(Ents);
+    const float height = (fFlags == CROUCHING) ? 55.0f : 70.0f;
 
-	const float xPlus = basePos.x + width;
-	const float xMinus = basePos.x - width;
-	const float yPlus = basePos.y + width;
-	const float yMinus = basePos.y - width;
-	const float zTop = basePos.z + height;
+    const float yawRad = viewAngles.y * 0.017453f; // (M_PI / 180.0f) precalculated
+    float cosYaw = cosf(yawRad);
+    float sinYaw = sinf(yawRad);
 
-	const Vector3 corners[8] = {
-		{xPlus, yPlus, basePos.z},
-		{xPlus, yMinus, basePos.z},
-		{xMinus, yMinus, basePos.z},
-		{xMinus, yPlus, basePos.z},
-		{xPlus, yPlus, zTop},
-		{xPlus, yMinus, zTop},
-		{xMinus, yMinus, zTop},
-		{xMinus, yPlus, zTop}
-	};
+    const float corners[8][3] = {
+        {width * (cosYaw - sinYaw), width * (sinYaw + cosYaw), 0},          // Front right bottom
+        {width * (cosYaw + sinYaw), width * (sinYaw - cosYaw), 0},          // Back right bottom  
+        {-width * (cosYaw - sinYaw), -width * (sinYaw + cosYaw), 0},        // Back left bottom
+        {-width * (cosYaw + sinYaw), -width * (sinYaw - cosYaw), 0},        // Front left bottom
+        {width * (cosYaw - sinYaw), width * (sinYaw + cosYaw), height},     // Front right top
+        {width * (cosYaw + sinYaw), width * (sinYaw - cosYaw), height},     // Back right top
+        {-width * (cosYaw - sinYaw), -width * (sinYaw + cosYaw), height},   // Back left top
+        {-width * (cosYaw + sinYaw), -width * (sinYaw - cosYaw), height}    // Front left top
+    };
 
-	Vector2 screenCorners[8];
-	for (int i = 0; i < 8; i++) {
-		screenCorners[i] = PosToScreen(corners[i]);
-	}
+    Vector2 screenCorners[8];
+    for (int i = 0; i < 8; i++) {
+        Vector3 worldPos = {
+            basePos.x + corners[i][0],
+            basePos.y + corners[i][1], 
+            basePos.z + corners[i][2]
+        };
+        screenCorners[i] = PosToScreen(worldPos);
+    }
 
-	// Draw lines with minimal calculations
-	// Bottom square
-	for (int i = 0; i < 4; i++) {
-		int next = (i + 1) & 3; // Faster than % 4
-		DrawLine(screenCorners[i], screenCorners[next], color, Thickness, true);
-	}
+    const int edges[12][2] = {
+        {0,1}, {1,2}, {2,3}, {3,0},  // Bottom 
+        {4,5}, {5,6}, {6,7}, {7,4},  // Top
+        {0,4}, {1,5}, {2,6}, {3,7}   // Sides
+    };
 
-	// Top square
-	for (int i = 4; i < 8; i++) {
-		int next = 4 + ((i + 1) & 3); // Faster than % 4
-		DrawLine(screenCorners[i], screenCorners[next], color, Thickness, true);
-	}
-
-	// Vertical lines
-	for (int i = 0; i < 4; i++) {
-		DrawLine(screenCorners[i], screenCorners[i + 4], color, Thickness, true);
-	}
+    for (int i = 0; i < 12; i++) {
+        const Vector2& start = screenCorners[edges[i][0]];
+        const Vector2& end = screenCorners[edges[i][1]];
+        if (start.x >= 0 && start.y >= 0 && end.x >= 0 && end.y >= 0 &&
+            start.x < X_Screen && start.y < Y_Screen && end.x < X_Screen && end.y < Y_Screen) {
+            DrawLine(start, end, color, Thickness, true);
+        }
+    }
 }
 
 void DrawCircle(Vector2 pos, int radious, int thickness, ImColor color) {

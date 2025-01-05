@@ -1,4 +1,5 @@
 #include "include.h"
+#include <algorithm>
 bool createConsole = true;
 bool isInitialized = false;
 bool isMenuVisible = true;
@@ -203,10 +204,10 @@ void renderImGui() {
 	UpdateWindow(overlayWindow);
 	if (isMenuVisible) {
 		inputHandler();
-		drawItem();
+		//drawItem();
 		
 		// Animate menu
-		static animator Animator = { 255, false, 0.5f };
+		static animator Animator = { 255, false, 0.1f };
 		animatecontent(Animator);
 
 		// Main window styling
@@ -273,7 +274,8 @@ void renderImGui() {
 			// Trigger bot section
 			ImGui::Checkbox("Enable Trigger Bot", &USettings.triggerbot);
 			if (USettings.triggerbot) {
-				ImGui::Combo("Trigger Key", &USettings.TriggerHotKey, "XBUTTON2\0MENU\0RBUTTON\0XBUTTON1\0LBUTTON\0CAPITAL\0SHIFT\0CONTROL");
+				if (ImGui::Combo("Trigger Key", &USettings.TriggerHotKey, "XBUTTON2\0MENU\0RBUTTON\0XBUTTON1\0LBUTTON\0CAPITAL\0SHIFT\0CONTROL"))
+					USettings.TSetHotKey(USettings.TriggerHotKey);
 				ImGui::SliderInt("Delay (ms)", &USettings.triggerbot_delayms, 0, 200);
 				ImGui::Separator();
 			}
@@ -281,7 +283,8 @@ void renderImGui() {
 			// Aimbot section
 			ImGui::Checkbox("Enable Aimbot", &USettings.Aimbot);
 			if (USettings.Aimbot) {
-				ImGui::Combo("Aim Key", &USettings.AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL");
+				if (ImGui::Combo("Aim Key", &USettings.AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL"))
+					USettings.SetHotKey(USettings.AimBotHotKey);
 				
 				ImGui::Text("Core Settings");
 				ImGui::SliderFloat("Smoothness", &USettings.Smooth, 0, 0.8f);
@@ -357,6 +360,8 @@ void renderImGui() {
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
 			// View Settings Section
+			ImGui::Text("View Settings Section");
+
 			ImGui::Checkbox("Enable Radar", &USettings.radar_hack);
 			if (USettings.radar_hack) {
 				ImGui::Text("Radar Settings");
@@ -627,7 +632,7 @@ void renderImGui() {
 				USettings.Squad_Bone_Esp_Color = { 0,0,255 };
 				USettings.Bone_Esp_Thickness = 0;
 				USettings.Bone_Esp = false;
-				USettings.SnaplLine_Esp_Start_Point = { 1920 / 2,1080 };
+				USettings.SnaplLine_Esp_Start_Point = { X_Screen / 2,Y_Screen };
 				USettings.SnaplLine_Esp_End_Point = false;
 				USettings.Enemy_SnaplLine_Esp_Color = { 255,0,0 };
 				USettings.Squad_SnaplLine_Esp_Color = { 0,0,255 };
@@ -683,8 +688,12 @@ void renderImGui() {
 				ImColor(255, 255, 255, (int)Animator.alpha), 12.0f
 			);
 
-		if (USettings.show_watermark)
-			ImGui::GetBackgroundDrawList()->AddImage((void*)pTexture, ImVec2(1726, -10), ImVec2(1906, 170));
+		if (USettings.show_watermark) {
+			ImVec2 screenSize = ImGui::GetIO().DisplaySize;
+			ImVec2 imageSize(128, 128); // Adjust size as needed
+			ImVec2 pos(screenSize.x - imageSize.x - 10, 5); // 10px padding from edges
+			ImGui::GetBackgroundDrawList()->AddImage((void*)pTexture, pos, ImVec2(pos.x + imageSize.x, pos.y + imageSize.y));
+		}
 
 		ImGui::PopStyleVar(2);
 		ImGui::PopStyleColor();
@@ -766,7 +775,7 @@ void renderImGui() {
 			bool showEnemy = TeamNum != LTeamNum && USettings.Show_Enemy;
 
 			if (USettings.radar_hack && showEnemy) {
-				TopDownToScreen(pos);
+				TopDownToScreen(pos, LocalPlayer);
 			}
 
 			if (!isVisible) continue;
@@ -813,49 +822,64 @@ void renderImGui() {
 				DrawCornerEsp(cornerWidth, height, feetpos, color, USettings.Box_CornerEsp_Thickness);
 			}
 
-			if (USettings.Name_ESP && (showSquad || showEnemy)) {
-				char names[16];
-				ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
-				Vector3 namePos = pos;
-				namePos.z += 84;
-				Vector2 nameScreen = PosToScreen(namePos);
-				if (nameScreen.x > 0 && nameScreen.y > 0 && nameScreen.x < X_Screen && nameScreen.y < Y_Screen) {
+			if ((USettings.Name_ESP || USettings.Distance_Esp || USettings.GunName_Esp) && (showSquad || showEnemy)) {
+				// Calculate base positions for top and bottom text
+				Vector3 topPos = pos;
+				Vector3 bottomPos = pos;
+				topPos.z += (fFlag == CROUCHING) ? 65 : 75;      // Above head
+				bottomPos.z -= 10;    // Below feet
+				float distance = E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100;
+				
+				Vector2 topScreen = PosToScreen(topPos);
+				Vector2 bottomScreen = PosToScreen(bottomPos);
+
+				// Check if positions are visible on screen
+				bool topVisible = topScreen.x > 0 && topScreen.y > 0 && topScreen.x < X_Screen && topScreen.y < Y_Screen;
+				bool bottomVisible = bottomScreen.x > 0 && bottomScreen.y > 0 && bottomScreen.x < X_Screen && bottomScreen.y < Y_Screen;
+				// You can adjust these values to fine-tune the scaling
+				const float MAX_SCALE = 1.0f;    // Maximum text scale when very close
+				const float MIN_SCALE = 0.5f;    // Minimum text scale when far away
+				const float SCALE_DISTANCE = 50.0f; // Distance at which scaling starts to decrease
+				
+				float scale = MAX_SCALE - (distance / SCALE_DISTANCE) * (MAX_SCALE - MIN_SCALE);
+				scale = std::clamp(scale, MIN_SCALE, MAX_SCALE);
+
+				// Draw name on top
+				if (USettings.Name_ESP && topVisible) {
+					char names[16];
+					ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
 					ImColor color = TeamNum == LTeamNum ? USettings.Squad_Name_ESP_Color : USettings.Enemy_Name_ESP_Color;
-					DrawString(nameScreen, color, 1, names);
+					DrawString(topScreen, color, scale, names);
 				}
-			}
 
-			if (USettings.Distance_Esp && (showSquad || showEnemy)) {
-				Vector3 distPos = pos;
-				distPos.z += 77;
-				Vector2 distScreen = PosToScreen(distPos);
-				if (distScreen.x > 0 && distScreen.y > 0 && distScreen.x < X_Screen && distScreen.y < Y_Screen) {
-					char distance[32];
-					sprintf_s(distance, "[%0.fm]", E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100);
-					ImColor color = TeamNum == LTeamNum ? USettings.Squad_Distance_Esp_Color : USettings.Enemy_Distance_Esp_Color;
-					DrawString(distScreen, color, 2, distance);
-				}
-			}
+				// Draw bottom info
+				if (bottomVisible) {
+					std::string bottomText;
+					
+					if (USettings.Distance_Esp) {
+						char distStr[32];
+						sprintf_s(distStr, "[%0.fm]", distance);
+						bottomText = distStr;
+					}
 
-			if (USettings.GunName_Esp && (showSquad || showEnemy)) {
-				short weaponDefinitionIndex;
-				if (read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex)) {
-					auto it = weaponMap.find(weaponDefinitionIndex);
-					if (it != weaponMap.end()) {
-						Vector3 gunPos = pos;
-						gunPos.z -= 10;
-						Vector2 gunScreen = PosToScreen(gunPos);
-						if (gunScreen.x > 0 && gunScreen.y > 0 && gunScreen.x < X_Screen && gunScreen.y < Y_Screen) {
-							ImColor color = TeamNum == LTeamNum ? USettings.Squad_GunName_Color : USettings.Enemy_GunName_Color;
-							DrawString(gunScreen, color, 2, it->second.c_str());
+					if (USettings.GunName_Esp) {
+						short weaponDefinitionIndex;
+						if (read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex)) {
+							auto it = weaponMap.find(weaponDefinitionIndex);
+							if (it != weaponMap.end()) {
+								if (!bottomText.empty()) {
+									bottomText += " | ";
+								}
+								bottomText += it->second;
+							}
 						}
 					}
-				}
-			}
 
-			if (USettings.Box3D_Esp && (showSquad || showEnemy)) {
-				ImColor color = TeamNum == LTeamNum ? USettings.Squad_Box3D_Esp_Color : USettings.Enemy_Box3D_Esp_Color;
-				Draw3DBox(CurrentPawn, color, USettings.Box3D_Esp_Thickness, USettings.Box3D_Width, fFlag);
+					if (!bottomText.empty()) {
+						ImColor color = TeamNum == LTeamNum ? USettings.Squad_Distance_Esp_Color : USettings.Enemy_Distance_Esp_Color;
+						DrawString(bottomScreen, color, scale, bottomText.c_str());
+					}
+				}
 			}
 		}
 	}
@@ -1059,7 +1083,6 @@ bool createDirectX() {
 	gD3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN;
 	gD3DPresentParams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 	gD3DPresentParams.BackBufferFormat = D3DFMT_A8R8G8B8;
-	gD3DPresentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE; //VSync (Vertical Synchronization)
 
 	if (pDirect->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, overlayWindow, D3DCREATE_HARDWARE_VERTEXPROCESSING, &gD3DPresentParams, 0, &pDevice) != D3D_OK) {
 		return FALSE;
