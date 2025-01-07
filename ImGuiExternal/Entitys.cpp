@@ -157,3 +157,7 @@ void Entitys::bunnyHop(int flags) {
 		jumping = false;
 	}
 }
+
+bool Entitys::IsCrouching(int flags) {
+	return (flags == 65667 || flags == 65683);
+}

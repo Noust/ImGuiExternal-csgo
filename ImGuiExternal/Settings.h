@@ -55,6 +55,11 @@ namespace CSettings {
 		Vector2 center = { 100,100 };
 		float radarRadius = 100.0f;
 
+		bool ShowEyeRay = false;
+		float length = 25;
+		ImColor EyeRay_Color = { 255,0,0 };
+		int EyeRay_Thickness = 0;
+
 		//ESP
 		bool Show_Enemy = true;
 		bool Show_Squad = true;
@@ -110,6 +115,7 @@ namespace CSettings {
 		float Box3D_Width = 20;
 
 		int ESP_Distance = 50;
+		float Text_Size = 0.9f;
 
 		bool Night_Mode = false;
 		bool FullBright_Mode = false;
@@ -123,6 +129,10 @@ namespace CSettings {
 		bool navigationwindow_animation = false;
 		bool optionswindow_animation = false;
 		bool show_watermark = true;
+		bool OBSBypass = false;
+		bool Show_Fps = false;
+
+		bool Backround_Animation = true;
 	};
 
 	inline Settings settings;

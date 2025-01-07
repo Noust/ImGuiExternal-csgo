@@ -3,9 +3,6 @@
 bool createConsole = true;
 bool isInitialized = false;
 bool isMenuVisible = true;
-char distance[50];
-char names[16];
-char name[16];
 
 /*checar el otro source y agregar cosas
 visibility check
@@ -203,11 +200,14 @@ void renderImGui() {
 	SetWindowLong(overlayWindow, GWL_EXSTYLE, isMenuVisible ? WS_EX_TOOLWINDOW : (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW));
 	UpdateWindow(overlayWindow);
 	if (isMenuVisible) {
+		if (USettings.Backround_Animation)
+			DrawBackgroundAnimation();
 		inputHandler();
-		//drawItem();
+		if (USettings.Show_Fps)
+			drawItem();
 		
 		// Animate menu
-		static animator Animator = { 255, false, 0.1f };
+		static animator Animator = { 255, false, 0.5f };
 		animatecontent(Animator);
 
 		// Main window styling
@@ -334,8 +334,8 @@ void renderImGui() {
 					if (DWORD64 CurrentController = E->GetEntInfo(i)) {
 						DWORD64 moneyservices;
 						if (read<DWORD64>(CurrentController, CCSPlayerController::m_pInGameMoneyServices, moneyservices) && moneyservices != NULL) {
-							char name[16];
-							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 16)) {
+							char name[128];
+							if (ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, name, 128)) {
 								int account, cashSpent, cashSpentTotal;
 								if (read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iAccount, account) &&
 									read<int>(moneyservices, CCSPlayerController_InGameMoneyServices::m_iCashSpentThisRound, cashSpent) &&
@@ -379,6 +379,12 @@ void renderImGui() {
 			}
 			ImGui::Checkbox("Night Mode", &USettings.Night_Mode);
 			ImGui::Checkbox("Full Bright", &USettings.FullBright_Mode);
+			ImGui::Checkbox("Eye Ray", &USettings.ShowEyeRay);
+			if (USettings.ShowEyeRay) {
+				ImGui::SliderFloat("Eye Ray Length", &USettings.length, 5, 100, "%.0f");
+				ImGui::ColorEdit3("Eye Ray Color", (float*)&USettings.EyeRay_Color);
+				ImGui::SliderInt("Eye Ray Thickness", &USettings.EyeRay_Thickness, 0, 10);
+			}
 
 			ImGui::Spacing();
 			ImGui::Separator();
@@ -504,6 +510,7 @@ void renderImGui() {
 			// Global ESP Settings
 			ImGui::Text("Global ESP Settings");
 			ImGui::SliderInt("Max ESP Distance", &USettings.ESP_Distance, 0, 100);
+			ImGui::SliderFloat("Text Size", &USettings.Text_Size, 0.4f, 2.0f, "%.2f");
 			
 			ImGui::PopStyleColor();
 		}
@@ -515,6 +522,22 @@ void renderImGui() {
 			ImGui::Checkbox("Window Animation", &USettings.window_animation);
 			ImGui::Checkbox("Navigation Animation", &USettings.navigationwindow_animation);
 			ImGui::Checkbox("Options Animation", &USettings.optionswindow_animation);
+			ImGui::Checkbox("Background Animation", &USettings.Backround_Animation);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			ImGui::Text("Menu Controls");
+			ImGui::Text("Press INSERT to toggle menu");
+			ImGui::Text("Press DELETE to exit");
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			ImGui::Text("Bypass");
+			ImGui::Checkbox("OBS Bypass", &USettings.OBSBypass);
 
 			ImGui::Spacing();
 			ImGui::Separator();
@@ -522,6 +545,7 @@ void renderImGui() {
 
 			// Save/Load Settings
 			ImGui::Text("Configuration");
+			ImGui::Checkbox("Show Overlay Fps", &USettings.Show_Fps);
 			if (ImGui::Button("Save Settings")) {
 				F->SaveSettings();
 			}
@@ -559,6 +583,7 @@ void renderImGui() {
 				USettings.whennotaiming = false;
 				USettings.circle = true;
 				USettings.Cross = true;
+				USettings.ShowEyeRay = false;
 				USettings.radar_hack = false;
 				USettings.Show_Enemy = true;
 				USettings.Show_Squad = true;
@@ -579,10 +604,13 @@ void renderImGui() {
 				USettings.navigationwindow_animation = false;
 				USettings.optionswindow_animation = false;
 				USettings.GunName_Esp = false;
+				USettings.OBSBypass = false;
+				USettings.Show_Fps = false;
 			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Reset to Default")) {
+				USettings.Show_Fps = false;
 				USettings.triggerbot = false;
 				USettings.triggerbot_delayms = 1;
 				USettings.Aimbot = false;
@@ -606,6 +634,10 @@ void renderImGui() {
 				USettings.Crosshair_thickness = 0;
 				USettings.circle = true;
 				USettings.Cross = true;
+				USettings.ShowEyeRay = false;
+				USettings.length = 50;
+				USettings.EyeRay_Color = { 255,0,0 };
+				USettings.EyeRay_Thickness = 0;
 				USettings.radar_hack = false;
 				USettings.scale = 0.08f;
 				USettings.center = { 100,100 };
@@ -653,13 +685,15 @@ void renderImGui() {
 				USettings.window_animation = true;
 				USettings.navigationwindow_animation = false;
 				USettings.optionswindow_animation = false;
-				USettings.show_watermark = false;
+				USettings.show_watermark = true;
 				USettings.GunName_Esp = false;
 				USettings.HotKey = VK_LBUTTON;
 				USettings.THotKey = VK_XBUTTON2;
 				USettings.TriggerHotKey = 0;
 				USettings.ArmorBar_ESP = false;
 				USettings.AimBotHotKey = 0;
+				USettings.Text_Size = 0.9f;
+				USettings.Backround_Animation = true;
 			}
 			ImGui::PopStyleColor();
 		}
@@ -701,7 +735,7 @@ void renderImGui() {
 		SetFocus(overlayWindow);
 	}
 
-	if (USettings.ArmorBar_ESP || USettings.GunName_Esp || USettings.SnaplLine_Esp || USettings.Box_ESP || USettings.Name_ESP || USettings.Bone_Esp || USettings.Distance_Esp || USettings.HealthBar_ESP || USettings.CornerBox_ESP || USettings.FilledBox_Esp || USettings.Box3D_Esp || USettings.radar_hack) {
+	if (USettings.ArmorBar_ESP || USettings.GunName_Esp || USettings.SnaplLine_Esp || USettings.Box_ESP || USettings.Name_ESP || USettings.Bone_Esp || USettings.Distance_Esp || USettings.HealthBar_ESP || USettings.CornerBox_ESP || USettings.FilledBox_Esp || USettings.Box3D_Esp || USettings.radar_hack || USettings.ShowEyeRay) {
 		DWORD64 LocalPlayer = E->GetLocal();
 		if (!LocalPlayer) return;
 
@@ -766,7 +800,7 @@ void renderImGui() {
 			if (!read<int>(CurrentPawn, C_BaseEntity::m_fFlags, fFlag))
 				continue;
 
-			pos1.z += (fFlag == CROUCHING) ? 55 : 70;
+			pos1.z += E->IsCrouching(fFlag) ? 55 : 70;
 			Vector2 headpos = PosToScreen(pos1);
 			float height = feetpos.y - headpos.y;
 
@@ -780,7 +814,7 @@ void renderImGui() {
 
 			if (!isVisible) continue;
 
-			float boxWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 4 : height / 4;
+			float boxWidth = E->IsCrouching(fFlag) ? (height + height * 0.25) / 4 : height / 4;
 
 			if (USettings.FilledBox_Esp && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings.Squad_FilledBox_Esp_Color : USettings.Enemy_FilledBox_Esp_Color;
@@ -805,61 +839,60 @@ void renderImGui() {
 
 			if (USettings.HealthBar_ESP && (showSquad || showEnemy)) {
 				float healthRatio = (float)health / E->GetMaxHealth(CurrentPawn);
-				float barWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 3.6f : height / 3.6f;
+				float barWidth = E->IsCrouching(fFlag) ? (height + height * 0.25) / 3.6f : height / 3.6f;
 				drawhealthbar(feetpos, height * healthRatio, barWidth, HealthBarColor(CurrentPawn), USettings.HealthBar_Esp_Thickness);
 			}
 
 			if (USettings.ArmorBar_ESP && (showSquad || showEnemy)) {
 				int armor = E->GetArmor(CurrentPawn);
 				float armorRatio = (float)armor / E->GetMaxHealth(CurrentPawn);
-				float barWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 3.6f : height / 3.6f;
+				float barWidth = E->IsCrouching(fFlag) ? (height + height * 0.25) / 3.6f : height / 3.6f;
 				drawarmorbar(feetpos, height * armorRatio, barWidth, ArmorBarColor(CurrentPawn), USettings.ArmorBar_Esp_Thickness);
 			}
 
 			if (USettings.CornerBox_ESP && (showSquad || showEnemy)) {
 				ImColor color = TeamNum == LTeamNum ? USettings.Squad_CornerBox_Esp_Color : USettings.Enemy_CornerBox_Esp_Color;
-				float cornerWidth = (fFlag == CROUCHING) ? (height + height * 0.25) / 2 : height / 2;
+				float cornerWidth = E->IsCrouching(fFlag) ? (height + height * 0.25) / 2 : height / 2;
 				DrawCornerEsp(cornerWidth, height, feetpos, color, USettings.Box_CornerEsp_Thickness);
 			}
 
 			if ((USettings.Name_ESP || USettings.Distance_Esp || USettings.GunName_Esp) && (showSquad || showEnemy)) {
-				// Calculate base positions for top and bottom text
 				Vector3 topPos = pos;
 				Vector3 bottomPos = pos;
-				topPos.z += (fFlag == CROUCHING) ? 65 : 75;      // Above head
-				bottomPos.z -= 10;    // Below feet
+				
+				topPos.z += E->IsCrouching(fFlag) ? 55 : 75;
+				bottomPos.z -= 10;
+				
 				float distance = E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100;
 				
 				Vector2 topScreen = PosToScreen(topPos);
 				Vector2 bottomScreen = PosToScreen(bottomPos);
 
-				// Check if positions are visible on screen
 				bool topVisible = topScreen.x > 0 && topScreen.y > 0 && topScreen.x < X_Screen && topScreen.y < Y_Screen;
 				bool bottomVisible = bottomScreen.x > 0 && bottomScreen.y > 0 && bottomScreen.x < X_Screen && bottomScreen.y < Y_Screen;
-				// You can adjust these values to fine-tune the scaling
-				const float MAX_SCALE = 1.0f;    // Maximum text scale when very close
-				const float MIN_SCALE = 0.5f;    // Minimum text scale when far away
-				const float SCALE_DISTANCE = 50.0f; // Distance at which scaling starts to decrease
-				
-				float scale = MAX_SCALE - (distance / SCALE_DISTANCE) * (MAX_SCALE - MIN_SCALE);
-				scale = std::clamp(scale, MIN_SCALE, MAX_SCALE);
 
-				// Draw name on top
 				if (USettings.Name_ESP && topVisible) {
-					char names[16];
-					ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 16);
+					char names[128];
+					ProcessMgr.ReadMemory(CurrentController + CBasePlayerController::m_iszPlayerName, names, 128);
 					ImColor color = TeamNum == LTeamNum ? USettings.Squad_Name_ESP_Color : USettings.Enemy_Name_ESP_Color;
-					DrawString(topScreen, color, scale, names);
+					
+					Vector2 namePos = topScreen;
+					namePos.y -= 15;
+					DrawString(namePos, color, USettings.Text_Size, names);
 				}
 
 				// Draw bottom info
 				if (bottomVisible) {
-					std::string bottomText;
+					float yOffset = 0;
 					
 					if (USettings.Distance_Esp) {
 						char distStr[32];
 						sprintf_s(distStr, "[%0.fm]", distance);
-						bottomText = distStr;
+						ImColor distColor = TeamNum == LTeamNum ? USettings.Squad_Distance_Esp_Color : USettings.Enemy_Distance_Esp_Color;
+						Vector2 distPos = bottomScreen;
+						distPos.y += yOffset;
+						DrawString(distPos, distColor, USettings.Text_Size, distStr);
+						yOffset += 15;
 					}
 
 					if (USettings.GunName_Esp) {
@@ -867,19 +900,23 @@ void renderImGui() {
 						if (read<short>(CurrentWeapon, (C_EconEntity::m_AttributeManager + C_AttributeContainer::m_Item + C_EconItemView::m_iItemDefinitionIndex), weaponDefinitionIndex)) {
 							auto it = weaponMap.find(weaponDefinitionIndex);
 							if (it != weaponMap.end()) {
-								if (!bottomText.empty()) {
-									bottomText += " | ";
-								}
-								bottomText += it->second;
+								ImColor gunColor = TeamNum == LTeamNum ? USettings.Squad_GunName_Color : USettings.Enemy_GunName_Color;
+								Vector2 gunPos = bottomScreen;
+								gunPos.y += yOffset;
+								DrawString(gunPos, gunColor, USettings.Text_Size, it->second.c_str());
 							}
 						}
 					}
-
-					if (!bottomText.empty()) {
-						ImColor color = TeamNum == LTeamNum ? USettings.Squad_Distance_Esp_Color : USettings.Enemy_Distance_Esp_Color;
-						DrawString(bottomScreen, color, scale, bottomText.c_str());
-					}
 				}
+			}
+
+			if (USettings.Box3D_Esp && (showSquad || showEnemy)) {
+				ImColor color = TeamNum == LTeamNum ? USettings.Squad_Box3D_Esp_Color : USettings.Enemy_Box3D_Esp_Color;
+				Draw3DBox(CurrentPawn, color, USettings.Box3D_Esp_Thickness, USettings.Box3D_Width, fFlag);
+			}
+
+			if (USettings.ShowEyeRay && (showSquad || showEnemy)) {
+				ShowLosLine(BoneArray, CurrentPawn, USettings.length, USettings.EyeRay_Color, USettings.EyeRay_Thickness);
 			}
 		}
 	}
@@ -968,11 +1005,25 @@ void renderImGui() {
 	}
 }
 
+void CleanupImGui() {
+	isInitialized = false;
+	isMenuVisible = false;
+	
+	Sleep(100);
+
+	// Cleanup ImGui
+	if (ImGui::GetCurrentContext() != nullptr) {
+		ImGui_ImplDX9_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
+	}
+}
+
 void mainLoop() {
 	static MSG msg;
 	static RECT oldRect;
 	ZeroMemory(&msg, sizeof(MSG));
-	while (msg.message != WM_QUIT && GetWindow(targetWindow, GW_HWNDPREV)) {
+	while (msg.message != WM_QUIT && GetWindow(targetWindow, GW_HWNDPREV) && !GetAsyncKeyState(VK_DELETE)) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -986,6 +1037,7 @@ void mainLoop() {
 		POINT windowPoint;
 		ZeroMemory(&windowRect, sizeof(RECT));
 		ZeroMemory(&windowPoint, sizeof(POINT));
+		SetWindowDisplayAffinity(overlayWindow, USettings.OBSBypass ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE);
 
 		GetClientRect(targetWindow, &windowRect);
 		ClientToScreen(targetWindow, &windowPoint);
@@ -1010,17 +1062,26 @@ void mainLoop() {
 		}
 	}
 
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	CleanupImGui();
 
-	clearVariable(pDevice);
-	clearVariable(pDirect);
+	if (pDevice) {
+		pDevice->Release();
+		pDevice = nullptr;
+	}
+	
+	if (pDirect) {
+		pDirect->Release();
+		pDirect = nullptr;
+	}
+
+	// Cleanup window
 	if (overlayWindow) {
 		DestroyWindow(overlayWindow);
 		UnregisterClass(windowClass.lpszClassName, windowClass.hInstance);
 		overlayWindow = nullptr;
 	}
+
+	ExitProcess(0);
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -1080,9 +1141,11 @@ bool createDirectX() {
 	ZeroMemory(&gD3DPresentParams, sizeof(gD3DPresentParams));
 	gD3DPresentParams.Windowed = TRUE;
 	gD3DPresentParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	gD3DPresentParams.BackBufferFormat = D3DFMT_UNKNOWN;
-	gD3DPresentParams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 	gD3DPresentParams.BackBufferFormat = D3DFMT_A8R8G8B8;
+	gD3DPresentParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+	gD3DPresentParams.MultiSampleType = D3DMULTISAMPLE_NONE;
+	gD3DPresentParams.EnableAutoDepthStencil = TRUE;
+	gD3DPresentParams.AutoDepthStencilFormat = D3DFMT_D16;
 
 	if (pDirect->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, overlayWindow, D3DCREATE_HARDWARE_VERTEXPROCESSING, &gD3DPresentParams, 0, &pDevice) != D3D_OK) {
 		return FALSE;
@@ -1091,6 +1154,8 @@ bool createDirectX() {
 }
 
 int main(int argc, char* argv[]) {
+	std::string randomTitle = generateRandomString(generateRandomInt(10, 30));
+	SetConsoleTitleA(randomTitle.c_str());
 	X_Screen = GetSystemMetrics(SM_CXSCREEN);
 	Y_Screen = GetSystemMetrics(SM_CYSCREEN);
 	if (createConsole == false) {

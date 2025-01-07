@@ -148,13 +148,34 @@ void DrawString(Vector2 pos, ImColor color, float scale, const char* text) {
 	ImVec2 textPos = ImVec2(pos.x - (textSize.x * scale) / 2, pos.y);
 
 	// Draw the text with scaling
-	ImGui::GetForegroundDrawList()->AddText(
+	ImGui::GetBackgroundDrawList()->AddText(
 		ImGui::GetFont(),
 		fontSize,
 		textPos,
 		color,
 		text
 	);
+}
+
+void ShowLosLine(DWORD64 BoneAddr, DWORD64 ent, const float Length, ImColor Color, float Thickness)
+{
+	Vector2 StartPoint, EndPoint;
+	Vector3 Temp;
+	Vector3 Head = E->GetBonePos3D(BoneAddr, bones::head);
+	Vector2 ViewAngles = E->GetViewAnles(ent);
+
+	StartPoint = PosToScreen(Head);
+
+	float LineLength = cos(ViewAngles.x * M_PI / 180) * Length;
+
+	Temp.x = Head.x + cos(ViewAngles.y * M_PI / 180) * LineLength;
+	Temp.y = Head.y + sin(ViewAngles.y * M_PI / 180) * LineLength;
+	Temp.z = Head.z - sin(ViewAngles.x * M_PI / 180) * Length;
+
+	if (!WorldToScreen(Temp, EndPoint))
+		return;
+
+	DrawLine(StartPoint, EndPoint, Color, Thickness, true);
 }
 
 void drawhealthbar(Vector2 pos, float height, float width, ImColor color, float thickness) {
@@ -202,7 +223,7 @@ void Draw3DBox(DWORD64 Ents, ImColor color, float Thickness, float width, int fF
         return;
 
     const Vector2 viewAngles = E->GetViewAnles(Ents);
-    const float height = (fFlags == CROUCHING) ? 55.0f : 70.0f;
+    const float height = E->IsCrouching(fFlags) ? 55.0f : 70.0f;
 
     const float yawRad = viewAngles.y * 0.017453f; // (M_PI / 180.0f) precalculated
     float cosYaw = cosf(yawRad);
@@ -267,7 +288,6 @@ void DrawCornerEsp(float W, float H, Vector2 pos, ImColor color, int thickness) 
 
 void DrawBones(DWORD64 BoneAddr, int thickness, ImColor color) {
 	const std::pair<int, int> bonePairs[] = {
-		{bones::head, bones::neck},
 		{bones::neck, bones::spine},
 		{bones::spine, bones::spine_1},
 		{bones::spine_1, bones::hip},
@@ -288,9 +308,8 @@ void DrawBones(DWORD64 BoneAddr, int thickness, ImColor color) {
 	Vector2 headPos = E->GetBonePos(BoneAddr, bones::head);
 
 	if (headPos.x > 0 || headPos.y > 0 || headPos.x < X_Screen || headPos.y < Y_Screen) {
-		float distanceToHead = E->GetCameraPos().dist(E->GetBonePos3D(BoneAddr, bones::head));
-		float headRadius = 43 * (100 / distanceToHead);
-		DrawCircle(headPos, headRadius, thickness, color);
+		float headradious = E->GetBonePos(BoneAddr, bones::head).dist(E->GetBonePos(BoneAddr, bones::neck));
+		DrawCircle(headPos, headradious, thickness, color);
 	}
 
 	Vector2 startPos, endPos;
@@ -298,6 +317,89 @@ void DrawBones(DWORD64 BoneAddr, int thickness, ImColor color) {
 		startPos = E->GetBonePos(BoneAddr, bone1);
 		endPos = E->GetBonePos(BoneAddr, bone2);
 		DrawLine(startPos, endPos, color, thickness, true);
+	}
+}
+
+void DrawBackgroundAnimation() {
+	static std::vector<ImVec2> particles;
+	static std::vector<float> particleAngles;
+	static std::vector<float> particleSpeeds;
+	static bool initialized = false;
+	static float spawnTimer = 0.0f;
+	const float SPAWN_INTERVAL = 0.5f;
+
+	// Initialize particles if not done yet
+	if (!initialized) {
+		for (int i = 0; i < 100; i++) {
+			particles.push_back(ImVec2(
+				static_cast<float>(rand() % static_cast<int>(X_Screen)),
+				static_cast<float>(rand() % static_cast<int>(Y_Screen))
+			));
+			particleAngles.push_back(static_cast<float>(rand()) / RAND_MAX * 2 * 3.14159f);
+			particleSpeeds.push_back(0.2f + static_cast<float>(rand()) / RAND_MAX * 0.3f);
+		}
+		initialized = true;
+	}
+
+	// Spawn new particles over time
+	spawnTimer += ImGui::GetIO().DeltaTime;
+	if (spawnTimer >= SPAWN_INTERVAL && particles.size() < 150) {
+		particles.push_back(ImVec2(
+			static_cast<float>(rand() % static_cast<int>(X_Screen)),
+			static_cast<float>(rand() % static_cast<int>(Y_Screen))
+		));
+		particleAngles.push_back(static_cast<float>(rand()) / RAND_MAX * 2 * 3.14159f);
+		particleSpeeds.push_back(0.2f + static_cast<float>(rand()) / RAND_MAX * 0.3f);
+		spawnTimer = 0.0f;
+	}
+
+	ImVec2 mousePos = ImGui::GetMousePos();
+	ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+	float deltaTime = ImGui::GetIO().DeltaTime;
+
+	// Update and draw each particle
+	for (size_t i = 0; i < particles.size(); i++) {
+		auto& particle = particles[i];
+		auto& angle = particleAngles[i];
+		auto& speed = particleSpeeds[i];
+
+		// Floating motion
+		particle.x += cos(angle) * speed;
+		particle.y += sin(angle) * speed;
+
+		// Slowly rotate angle for smooth wave-like motion
+		angle += deltaTime * 0.3f;
+
+		// Mouse interaction
+		float dx = particle.x - mousePos.x;
+		float dy = particle.y - mousePos.y;
+		float dist = sqrt(dx * dx + dy * dy);
+
+		const float MAX_INFLUENCE_DIST = 150.0f;
+		const float MIN_INFLUENCE_DIST = 50.0f;
+
+		if (dist < MAX_INFLUENCE_DIST) {
+			float movement_factor;
+			if (dist < MIN_INFLUENCE_DIST) {
+				movement_factor = 1.0f;
+			}
+			else {
+				movement_factor = 1.0f - ((dist - MIN_INFLUENCE_DIST) / (MAX_INFLUENCE_DIST - MIN_INFLUENCE_DIST));
+			}
+
+			particle.x += (dx / dist) * movement_factor * 3.0f;
+			particle.y += (dy / dist) * movement_factor * 3.0f;
+		}
+
+		// Screen wrapping
+		if (particle.x < 0) particle.x = X_Screen;
+		if (particle.x > X_Screen) particle.x = 0;
+		if (particle.y < 0) particle.y = Y_Screen;
+		if (particle.y > Y_Screen) particle.y = 0;
+
+		// Draw particle with pulsating opacity
+		float opacity = 0.4f + 0.2f * sin(ImGui::GetTime() * speed * 2.0f);
+		draw_list->AddCircleFilled(particle, 2.0f, ImColor(255, 255, 255, static_cast<int>(opacity * 255)));
 	}
 }
 

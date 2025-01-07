@@ -2,7 +2,6 @@
 #include "include.h"
 int JUMPING = 65664;
 int STANDING = 65665;
-int CROUCHING = 65683;
 
 int PLUS_JUMP = 65537;
 int MINUS_JUMP = 256;
@@ -27,4 +26,5 @@ public:
 	Vector2 GetViewAnles(DWORD64 addr);
 	Vector3 GetCameraPos();
 	void bunnyHop(int flags);
+	bool IsCrouching(int flags);
 };
