@@ -3,7 +3,7 @@
 
 DWORD64 Entitys::GetEnt(int index) {
     DWORD64 entitylist;
-    if (!read<DWORD64>(client, ClientDll::dwEntityList, entitylist))
+    if (!read<DWORD64>(client, client_dll::dwEntityList, entitylist))
         return NULL;
 
     DWORD64 listentry;
@@ -35,7 +35,7 @@ DWORD64 Entitys::GetEntt(int handle) {
         return NULL;
 
     DWORD64 entitylist;
-    if (!read<DWORD64>(client, ClientDll::dwEntityList, entitylist))
+    if (!read<DWORD64>(client, client_dll::dwEntityList, entitylist))
         return NULL;
 
     DWORD64 listentry;
@@ -55,13 +55,13 @@ DWORD64 Entitys::GetEntt(int handle) {
 
 DWORD64 Entitys::GetLocal() {
 	DWORD64 local;
-	if (!read<DWORD64>(client, ClientDll::dwLocalPlayerPawn, local))
+	if (!read<DWORD64>(client, client_dll::dwLocalPlayerPawn, local))
 		return NULL;
 	return local;
 }
 
 DWORD64 Entitys::GetEntInfo(int index) {
-	DWORD64 entitylist; read<DWORD64>(client, ClientDll::dwEntityList, entitylist);
+	DWORD64 entitylist; read<DWORD64>(client, client_dll::dwEntityList, entitylist);
 	DWORD64 listentry;
 	if (read<DWORD64>(entitylist, 0x10, listentry)) {
 		DWORD64 CurrentController;

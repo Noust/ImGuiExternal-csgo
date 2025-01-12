@@ -41,6 +41,9 @@ namespace CSettings {
 			HotKey = HotKeyList.at(Index);
 		}
 
+		bool Recoil_Control = false;
+		Vector2 RRCSScale = { 0.695f,0.66f };
+
 		//visuals
 		bool DrawCrosshair = false;
 		bool whennotaiming = false;

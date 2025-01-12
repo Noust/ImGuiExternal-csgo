@@ -8,7 +8,6 @@ bool isMenuVisible = true;
 visibility check
 bomb hack
 speed hack
-recoil control
 sking changer*/
 
 IDirect3DTexture9* pTexture = nullptr;
@@ -280,9 +279,16 @@ void renderImGui() {
 				ImGui::Separator();
 			}
 
+			// Recoil Control section
+			ImGui::Checkbox("Enable Recoil Control", &USettings.Recoil_Control);
+			if (USettings.Recoil_Control) {
+				USettings.Aimbot = false;  // Disable Aimbot when enabling Recoil Control
+			}
+
 			// Aimbot section
 			ImGui::Checkbox("Enable Aimbot", &USettings.Aimbot);
 			if (USettings.Aimbot) {
+				USettings.Recoil_Control = false;  // Disable Recoil Control when enabling Aimbot
 				if (ImGui::Combo("Aim Key", &USettings.AimBotHotKey, "LBUTTON\0MENU\0RBUTTON\0XBUTTON1\0XBUTTON2\0CAPITAL\0SHIFT\0CONTROL"))
 					USettings.SetHotKey(USettings.AimBotHotKey);
 				
@@ -291,10 +297,16 @@ void renderImGui() {
 				ImGui::SliderFloat("FOV", &USettings.AimFov, 10, 1920);
 
 				ImGui::Text("Target Selection");
-				ImGui::Checkbox("Head Target", &USettings.Head_Target);
-				ImGui::Checkbox("Body Target", &USettings.Body_Target);
-				if (USettings.Head_Target) USettings.Body_Target = false;
-				if (USettings.Body_Target) USettings.Head_Target = false;
+				if (ImGui::Checkbox("Head Target", &USettings.Head_Target)) {
+					if (USettings.Head_Target) {
+						USettings.Body_Target = false;
+					}
+				}
+				if (ImGui::Checkbox("Body Target", &USettings.Body_Target)) {
+					if (USettings.Body_Target) {
+						USettings.Head_Target = false;
+					}
+				}
 
 				ImGui::Text("Visual Feedback");
 				ImGui::Checkbox("Show FOV", &USettings.ShowFov);
@@ -606,6 +618,7 @@ void renderImGui() {
 				USettings.GunName_Esp = false;
 				USettings.OBSBypass = false;
 				USettings.Show_Fps = false;
+				USettings.Recoil_Control = false;
 			}
 
 			ImGui::SameLine();
@@ -693,6 +706,7 @@ void renderImGui() {
 				USettings.ArmorBar_ESP = false;
 				USettings.AimBotHotKey = 0;
 				USettings.Text_Size = 0.9f;
+				USettings.Recoil_Control = false;
 				USettings.Backround_Animation = true;
 			}
 			ImGui::PopStyleColor();
@@ -790,6 +804,9 @@ void renderImGui() {
 				!read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode) ||
 				!read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray) ||
 				!read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon))
+				continue;
+
+			if (!CurrentWeapon)
 				continue;
 
 			Vector3 pos = E->GetBonePos3D(BoneArray, 28);
@@ -1053,6 +1070,7 @@ void mainLoop() {
 		if (!isMenuVisible) {
 			GetClients();
 			TriggerBot();
+			RecoilControl();
 			if (USettings.Aimbot) {
 				int i = FindClosestEnemy();
 				if (i == 100)

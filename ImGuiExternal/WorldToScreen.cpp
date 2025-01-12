@@ -45,7 +45,7 @@ bool WorldToScreen(const Vector3& Pos, Vector2& ToPos)
 
 Vector2 PosToScreen(Vector3 pos) {
 	Vector2 posscreen;
-	if (ProcessMgr.ReadMemory(client + ClientDll::dwViewMatrix, Matrix, 64)) {
+	if (ProcessMgr.ReadMemory(client + client_dll::dwViewMatrix, Matrix, 64)) {
 		if (WorldToScreen(pos, posscreen)) {
 			return posscreen;
 		}
