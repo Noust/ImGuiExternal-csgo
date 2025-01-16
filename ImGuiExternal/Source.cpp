@@ -8,7 +8,10 @@ bool isMenuVisible = true;
 visibility check
 bomb hack
 speed hack
-sking changer*/
+sking changer
+dwPlantedC4 
+m_pGameSceneNode
+m_vecAbsOrigin*/
 
 IDirect3DTexture9* pTexture = nullptr;
 
