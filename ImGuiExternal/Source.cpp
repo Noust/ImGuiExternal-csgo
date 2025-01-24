@@ -300,14 +300,23 @@ void renderImGui() {
 				ImGui::SliderFloat("FOV", &USettings.AimFov, 10, 1920);
 
 				ImGui::Text("Target Selection");
+				// Ensure at least one target option is selected
+				if (!USettings.Head_Target && !USettings.Body_Target) {
+					USettings.Head_Target = true; // Default to head if none selected
+				}
+				
 				if (ImGui::Checkbox("Head Target", &USettings.Head_Target)) {
 					if (USettings.Head_Target) {
 						USettings.Body_Target = false;
+					} else if (!USettings.Body_Target) {
+						USettings.Head_Target = true; // Prevent unchecking if body isn't checked
 					}
 				}
 				if (ImGui::Checkbox("Body Target", &USettings.Body_Target)) {
 					if (USettings.Body_Target) {
 						USettings.Head_Target = false;
+					} else if (!USettings.Head_Target) {
+						USettings.Body_Target = true; // Prevent unchecking if head isn't checked
 					}
 				}
 

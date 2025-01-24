@@ -1,20 +1,20 @@
 #pragma once
 #include "include.h"
 
-inline ImVec2 AngleToScreenOffset(float angleX, float angleY, float previousX, float previousY) {
+inline Vector2 AngleToScreenOffset(float angleX, float angleY, float previousX, float previousY) {
 	const float fov = 90.0f;
 	int width = X_Screen;
 	int height = Y_Screen;
 
 	float fovRad = fov * (M_PI / 180.0f);
 
-	double thetaX = (angleX - previousX) * (M_PI / 180.0f);
-	double offsetX = (width * tan(thetaX)) / (2 * tan(fovRad / 2));
+	float thetaX = (angleX - previousX) * (M_PI / 180.0f);
+    float offsetX = (width * tan(thetaX)) / (2 * tan(fovRad / 2));
 
-	double thetaY = (angleY - previousY) * (M_PI / 180.0f);
-	double offsetY = (height * tan(thetaY)) / (2 * tan(fovRad / 2));
+    float thetaY = (angleY - previousY) * (M_PI / 180.0f);
+    float offsetY = (height * tan(thetaY)) / (2 * tan(fovRad / 2));
 
-	return ImVec2(-offsetX, offsetY);
+    return { -offsetX, offsetY };
 }
 
 void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
@@ -44,7 +44,7 @@ void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
     }
 
     Vector3 Angles = clampAngles({Pitch, Yaw});
-    ImVec2 screenOffset = AngleToScreenOffset(Angles.y, Angles.x, currentView.y, currentView.x);
+    Vector2 screenOffset = AngleToScreenOffset(Angles.y, Angles.x, currentView.y, currentView.x);
 
     std::this_thread::sleep_for(std::chrono::microseconds(50));
     mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(screenOffset.x), static_cast<DWORD>(screenOffset.y), 0, 0);
