@@ -4,47 +4,47 @@
 #include <cstddef>
 
 namespace buttons {
-    constexpr std::ptrdiff_t attack = 0x1866610;
-    constexpr std::ptrdiff_t attack2 = 0x18666A0;
-    constexpr std::ptrdiff_t back = 0x18668E0;
-    constexpr std::ptrdiff_t duck = 0x1866BB0;
-    constexpr std::ptrdiff_t forward = 0x1866850;
-    constexpr std::ptrdiff_t jump = 0x1866B20;
-    constexpr std::ptrdiff_t left = 0x1866970;
-    constexpr std::ptrdiff_t lookatweapon = 0x1A8E4F0;
-    constexpr std::ptrdiff_t reload = 0x1866580;
-    constexpr std::ptrdiff_t right = 0x1866A00;
-    constexpr std::ptrdiff_t showscores = 0x1A8E3D0;
-    constexpr std::ptrdiff_t sprint = 0x18664F0;
-    constexpr std::ptrdiff_t turnleft = 0x1866730;
-    constexpr std::ptrdiff_t turnright = 0x18667C0;
-    constexpr std::ptrdiff_t use = 0x1866A90;
-    constexpr std::ptrdiff_t zoom = 0x1A8E460;
+    constexpr std::ptrdiff_t attack = 0x1882720;
+    constexpr std::ptrdiff_t attack2 = 0x18827B0;
+    constexpr std::ptrdiff_t back = 0x18829F0;
+    constexpr std::ptrdiff_t duck = 0x1882CC0;
+    constexpr std::ptrdiff_t forward = 0x1882960;
+    constexpr std::ptrdiff_t jump = 0x1882C30;
+    constexpr std::ptrdiff_t left = 0x1882A80;
+    constexpr std::ptrdiff_t lookatweapon = 0x1AAB590;
+    constexpr std::ptrdiff_t reload = 0x1882690;
+    constexpr std::ptrdiff_t right = 0x1882B10;
+    constexpr std::ptrdiff_t showscores = 0x1AAB470;
+    constexpr std::ptrdiff_t sprint = 0x1882600;
+    constexpr std::ptrdiff_t turnleft = 0x1882840;
+    constexpr std::ptrdiff_t turnright = 0x18828D0;
+    constexpr std::ptrdiff_t use = 0x1882BA0;
+    constexpr std::ptrdiff_t zoom = 0x1AAB500;
 }
 
 namespace client_dll {
-    constexpr std::ptrdiff_t dwCSGOInput = 0x1A8E5D0;
-    constexpr std::ptrdiff_t dwEntityList = 0x1A197E8;
-    constexpr std::ptrdiff_t dwGameEntitySystem = 0x1B3F728;
+    constexpr std::ptrdiff_t dwCSGOInput = 0x1AAB670;
+    constexpr std::ptrdiff_t dwEntityList = 0x1A359B0;
+    constexpr std::ptrdiff_t dwGameEntitySystem = 0x1B5C6C8;
     constexpr std::ptrdiff_t dwGameEntitySystem_highestEntityIndex = 0x20F0;
-    constexpr std::ptrdiff_t dwGameRules = 0x1A80188;
-    constexpr std::ptrdiff_t dwGlobalVars = 0x1861AA8;
-    constexpr std::ptrdiff_t dwGlowManager = 0x1A7F8D0;
-    constexpr std::ptrdiff_t dwLocalPlayerController = 0x1A6A210;
-    constexpr std::ptrdiff_t dwLocalPlayerPawn = 0x186DE00;
-    constexpr std::ptrdiff_t dwPlantedC4 = 0x1A88DA0;
-    constexpr std::ptrdiff_t dwPrediction = 0x186DC80;
-    constexpr std::ptrdiff_t dwSensitivity = 0x1A81018;
+    constexpr std::ptrdiff_t dwGameRules = 0x1A9C7F0;
+    constexpr std::ptrdiff_t dwGlobalVars = 0x187DC80;
+    constexpr std::ptrdiff_t dwGlowManager = 0x1A9C810;
+    constexpr std::ptrdiff_t dwLocalPlayerController = 0x1A87030;
+    constexpr std::ptrdiff_t dwLocalPlayerPawn = 0x1889F20;
+    constexpr std::ptrdiff_t dwPlantedC4 = 0x1AA6840;
+    constexpr std::ptrdiff_t dwPrediction = 0x1889DA0;
+    constexpr std::ptrdiff_t dwSensitivity = 0x1A9DF58;
     constexpr std::ptrdiff_t dwSensitivity_sensitivity = 0x40;
-    constexpr std::ptrdiff_t dwViewAngles = 0x1A8E9A0;
-    constexpr std::ptrdiff_t dwViewMatrix = 0x1A84890;
-    constexpr std::ptrdiff_t dwViewRender = 0x1A85208;
-    constexpr std::ptrdiff_t dwWeaponC4 = 0x1A1CA70;
+    constexpr std::ptrdiff_t dwViewAngles = 0x1AABA40;
+    constexpr std::ptrdiff_t dwViewMatrix = 0x1AA17B0;
+    constexpr std::ptrdiff_t dwViewRender = 0x1AA1FC0;
+    constexpr std::ptrdiff_t dwWeaponC4 = 0x1A39C20;
 }
 // Module: engine2.dll
 namespace engine2_dll {
-    constexpr std::ptrdiff_t dwBuildNumber = 0x53ABE4;
-    constexpr std::ptrdiff_t dwNetworkGameClient = 0x539CE0;
+    constexpr std::ptrdiff_t dwBuildNumber = 0x540BE4;
+    constexpr std::ptrdiff_t dwNetworkGameClient = 0x53FCE0;
     constexpr std::ptrdiff_t dwNetworkGameClient_clientTickCount = 0x368;
     constexpr std::ptrdiff_t dwNetworkGameClient_deltaTick = 0x27C;
     constexpr std::ptrdiff_t dwNetworkGameClient_isBackgroundMap = 0x281447;
@@ -52,8 +52,8 @@ namespace engine2_dll {
     constexpr std::ptrdiff_t dwNetworkGameClient_maxClients = 0x238;
     constexpr std::ptrdiff_t dwNetworkGameClient_serverTickCount = 0x36C;
     constexpr std::ptrdiff_t dwNetworkGameClient_signOnState = 0x228;
-    constexpr std::ptrdiff_t dwWindowHeight = 0x61D3E4;
-    constexpr std::ptrdiff_t dwWindowWidth = 0x61D3E0;
+    constexpr std::ptrdiff_t dwWindowHeight = 0x623504;
+    constexpr std::ptrdiff_t dwWindowWidth = 0x623500;
 }
 
 namespace CCSPlayer_MovementServices {

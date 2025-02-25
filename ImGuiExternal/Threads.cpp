@@ -84,5 +84,5 @@ void Aimbot(int index) {
 		}
 	}
 
-	setRCS();
+	/*setRCS();*/
 }
