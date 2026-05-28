@@ -32,7 +32,7 @@ void TriggerBot() {
 		DWORD64 LocalPlayer = E->GetLocal();
 
 		int team = E->GetTeam(LocalPlayer);
-		int entindex; read<int>(LocalPlayer, C_CSPlayerPawnBase::m_iIDEntIndex, entindex);
+		int entindex; read<int>(LocalPlayer, C_CSPlayerPawn::m_iIDEntIndex, entindex);
 
 		if (entindex == -1)
 			return;
@@ -80,7 +80,7 @@ void Aimbot(int index) {
 			E->GetBonePos3D(BoneArray, bones::spine);
 
 		if (PosToScreen(aimpos).dist({ X_Screen / 2, Y_Screen / 2 }) < USettings.AimFov) {
-			AimBot(LocalPlayer, E->GetCameraPos(), aimpos);
+			AimBot(aimpos);
 		}
 	}
 

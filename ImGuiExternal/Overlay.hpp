@@ -79,46 +79,6 @@ void drawNewText(int x, int y, RGBA* color, const char* str) {
 	ImGui::GetForegroundDrawList()->AddText(ImVec2(x, y), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), utf_8_2.c_str());
 }
 
-void drawRect(int x, int y, int w, int h, RGBA* color, int thickness) {
-	ImGui::GetForegroundDrawList()->AddRect(ImVec2(x, y), ImVec2(x + w, y + h), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), 0, 0, thickness);
-}
-
-void drawFilledRect(int x, int y, int w, int h, RGBA* color) {
-	ImGui::GetForegroundDrawList()->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), 0, 0);
-}
-
-void drawCircleFilled(int x, int y, int radius, RGBA* color) {
-	ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(x, y), radius, ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)));
-}
-
-void drawCircle(int x, int y, int radius, RGBA* color, int segments) {
-	ImGui::GetForegroundDrawList()->AddCircle(ImVec2(x, y), radius, ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), segments);
-}
-
-void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, RGBA* color, float thickne) {
-	ImGui::GetForegroundDrawList()->AddTriangle(ImVec2(x1, y1), ImVec2(x2, y2), ImVec2(x3, y3), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), thickne);
-}
-
-void drawTriangleFilled(int x1, int y1, int x2, int y2, int x3, int y3, RGBA* color) {
-	ImGui::GetForegroundDrawList()->AddTriangleFilled(ImVec2(x1, y1), ImVec2(x2, y2), ImVec2(x3, y3), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)));
-}
-
-void drawLine(int x1, int y1, int x2, int y2, RGBA* color, int thickness) {
-	ImGui::GetForegroundDrawList()->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), ImGui::ColorConvertFloat4ToU32(ImVec4(color->R / 255.0, color->G / 255.0, color->B / 255.0, color->A / 255.0)), thickness);
-}
-
-void drawCornerBox(int x, int y, int w, int h, int borderPx, RGBA* color) {
-	drawFilledRect(x + borderPx, y, w / 3, borderPx, color);
-	drawFilledRect(x + w - w / 3 + borderPx, y, w / 3, borderPx, color);
-	drawFilledRect(x, y, borderPx, h / 3, color);
-	drawFilledRect(x, y + h - h / 3 + borderPx * 2, borderPx, h / 3, color);
-	drawFilledRect(x + borderPx, y + h + borderPx, w / 3, borderPx, color);
-	drawFilledRect(x + w - w / 3 + borderPx, y + h + borderPx, w / 3, borderPx, color);
-	drawFilledRect(x + w + borderPx, y, borderPx, h / 3, color);
-	drawFilledRect(x + w + borderPx, y + h - h / 3 + borderPx * 2, borderPx, h / 3, color);
-}
-
-
 void DrawLine(Vector2 pos1, Vector2 pos2, ImColor color, float Thicknes, bool checkpoints) {
 	if (checkpoints) {
 		if (pos1.x >= 0 && pos1.y >= 0 && pos1.x <= X_Screen && pos1.y <= Y_Screen && pos2.x >= 0 && pos2.y >= 0 && pos2.x <= X_Screen && pos2.y <= Y_Screen) {

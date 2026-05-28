@@ -17,7 +17,7 @@
 //    return { -offsetX, offsetY };
 //}
 
-void AimBot(DWORD64 local, Vector3 LocalPos, Vector3 AimPos) {
+void AimBot(Vector3 AimPos) {
     Vector2 screenPos = PosToScreen(AimPos);
     
     if (screenPos.x != -1 && screenPos.y != -1) {
@@ -60,37 +60,35 @@ void RecoilControl() {
 
     Vector2 currentView = E->GetViewAnles(local);
     
-    C_UTL_VECTOR AimPunchCache;
-    if (read<C_UTL_VECTOR>(local, C_CSPlayerPawn::m_aimPunchCache, AimPunchCache)) {
-        if (AimPunchCache.Count > 0 && AimPunchCache.Count <= 0xFFFF) {
-            Vector2 PunchAngle;
-            if (ProcessMgr.ReadMemory<Vector2>(AimPunchCache.Data + (AimPunchCache.Count - 1) * sizeof(Vector3), PunchAngle)) {
-                if (previousShots <= 1 && ShotsFired > 1) {
-                    oldPunch = PunchAngle;
-                }
-
-                Vector2 deltaPunch;
-                deltaPunch.x = (PunchAngle.x - oldPunch.x) * USettings.RRCSScale.x;
-                deltaPunch.y = (PunchAngle.y - oldPunch.y) * USettings.RRCSScale.y;
-
-                float pixelScale = 100;
-
-                float moveX = deltaPunch.y * pixelScale;
-                float moveY = -deltaPunch.x * pixelScale;
-
-                if (ShotsFired > 30) {
-                    moveY -= 0.16f;
-                }
-
-                if (abs(moveX) > 0.01f || abs(moveY) > 0.01f) {
-                    mouse_event(MOUSEEVENTF_MOVE, 
-                        static_cast<DWORD>(moveX), 
-                        static_cast<DWORD>(moveY), 
-                        0, 0);
-                }
-                
-                oldPunch = PunchAngle;
+    DWORD64 aimPunchServices;
+    if (read<DWORD64>(local, C_CSPlayerPawn::m_pAimPunchServices, aimPunchServices) && aimPunchServices) {
+        Vector2 punchAngle;
+        if (read<Vector2>(aimPunchServices, CCSPlayer_AimPunchServices::m_unpredictableBaseAngle, punchAngle)) {
+            if (previousShots <= 1 && ShotsFired > 1) {
+                oldPunch = punchAngle;
             }
+
+            Vector2 deltaPunch;
+            deltaPunch.x = (punchAngle.x - oldPunch.x) * USettings.RRCSScale.x;
+            deltaPunch.y = (punchAngle.y - oldPunch.y) * USettings.RRCSScale.y;
+
+            float pixelScale = 100;
+
+            float moveX = deltaPunch.y * pixelScale;
+            float moveY = -deltaPunch.x * pixelScale;
+
+            if (ShotsFired > 30) {
+                moveY -= 0.16f;
+            }
+
+            if (abs(moveX) > 0.01f || abs(moveY) > 0.01f) {
+                mouse_event(MOUSEEVENTF_MOVE, 
+                    static_cast<DWORD>(moveX), 
+                    static_cast<DWORD>(moveY), 
+                    0, 0);
+            }
+            
+            oldPunch = punchAngle;
         }
     }
     

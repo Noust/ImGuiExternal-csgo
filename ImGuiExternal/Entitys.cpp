@@ -74,7 +74,7 @@ DWORD64 Entitys::GetEntInfo(int index) {
 
 Vector3 Entitys::GetPos(DWORD64 ent) {
 	Vector3 pos;
-	if (!read<Vector3>(ent, CBaseAnimGraph::m_vLastSlopeCheckPos, pos))
+	if (!read<Vector3>(ent, C_BasePlayerPawn::m_vOldOrigin, pos))
 		return { 0,0,0 };
 	return pos;
 }
@@ -119,14 +119,14 @@ Vector3 Entitys::GetBonePos3D(DWORD64 BoneAddr, int BoneId) {
 
 Vector2 Entitys::GetViewAnles(DWORD64 addr) {
 	Vector2 ViewAngles;
-	if (!read<Vector2>(addr, C_CSPlayerPawnBase::m_angEyeAngles, ViewAngles))
+	if (!read<Vector2>(addr, C_CSPlayerPawn::m_angEyeAngles, ViewAngles))
 		return { 0,0 };
 	return ViewAngles;
 }
 
 Vector3 Entitys::GetCameraPos() {
 	Vector3 CameraPos;
-	if (!read<Vector3>(GetLocal(), C_CSPlayerPawnBase::m_vecLastClipCameraPos, CameraPos))
+	if (!read<Vector3>(GetLocal(), C_BasePlayerPawn::m_vecLastCameraSetupLocalOrigin, CameraPos))
 		return { 0,0,0 };
 	return CameraPos;
 }

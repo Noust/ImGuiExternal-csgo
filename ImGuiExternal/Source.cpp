@@ -8,7 +8,7 @@ bool isMenuVisible = true;
 visibility check
 bomb hack
 speed hack
-sking changer
+skin changer
 dwPlantedC4 
 m_pGameSceneNode
 m_vecAbsOrigin*/
@@ -229,13 +229,13 @@ void renderImGui() {
 
 		// Navigation buttons
 		float windowWidth = ImGui::GetWindowSize().x;
-		float buttonWidth = (ImGui::GetContentRegionAvail().x - 30) / 4;
-		float spacing = (windowWidth - (buttonWidth * 4)) / 5;
+		float buttonWidth = (ImGui::GetContentRegionAvail().x - 30) / 5;
+		float spacing = (windowWidth - (buttonWidth * 5)) / 6;
 
-		const char* tabs[] = { "Gun", "Legit", "Visuals", "Config" };
-		int tabValues[] = { 1, 2, 3, 4 };
+		const char* tabs[] = { "Gun", "Legit", "Visuals", "Config", "Debug" };
+		int tabValues[] = { 1, 2, 3, 4, 5 };
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 5; i++) {
 			ImGui::SetCursorPosX(spacing * (i + 1) + buttonWidth * i);
 			
 			bool selected = (CSettings::MenuWindow == tabValues[i]);
@@ -723,6 +723,189 @@ void renderImGui() {
 			}
 			ImGui::PopStyleColor();
 		}
+
+		else if (CSettings::MenuWindow == 5) {
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			ImGui::TextColored(ImColor(255, 200, 0), "ESP Debug Console");
+			ImGui::Separator();
+
+			DWORD64 LocalPlayer = E->GetLocal();
+			ImGui::Text("Local Player: %s", LocalPlayer ? "FOUND" : "NOT FOUND");
+			if (LocalPlayer) {
+				ImGui::SameLine();
+				ImGui::TextColored(ImColor(0, 255, 0), "0x%llX", LocalPlayer);
+
+				int localHealth = E->GetHealth(LocalPlayer);
+				int localTeam = E->GetTeam(LocalPlayer);
+				Vector3 localPos = E->GetPos(LocalPlayer);
+				ImGui::Text("Health: %d | Team: %d", localHealth, localTeam);
+				ImGui::Text("Position: X=%.1f Y=%.1f Z=%.1f", localPos.x, localPos.y, localPos.z);
+
+				int localShotsFired = 0;
+				read<int>(LocalPlayer, C_CSPlayerPawn::m_iShotsFired, localShotsFired);
+				ImGui::Text("Shots Fired: %d", localShotsFired);
+
+				DWORD64 aimPunchSvc = 0;
+				read<DWORD64>(LocalPlayer, C_CSPlayerPawn::m_pAimPunchServices, aimPunchSvc);
+				ImGui::Text("AimPunchServices: 0x%llX", aimPunchSvc);
+
+				Vector2 punchAngle = { 0, 0 };
+				if (aimPunchSvc) {
+					read<Vector2>(aimPunchSvc, CCSPlayer_AimPunchServices::m_unpredictableBaseAngle, punchAngle);
+				}
+				ImGui::Text("Punch Angle: X=%.3f Y=%.3f", punchAngle.x, punchAngle.y);
+
+				DWORD64 weaponSvc = 0;
+				read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pWeaponServices, weaponSvc);
+				ImGui::Text("WeaponServices: 0x%llX", weaponSvc);
+
+				if (weaponSvc) {
+					int weaponHandle = -1;
+					read<int>(weaponSvc, CPlayer_WeaponServices::m_hActiveWeapon, weaponHandle);
+					ImGui::Text("Active Weapon Handle: 0x%X", weaponHandle);
+				}
+
+				Vector2 viewAngles = E->GetViewAnles(LocalPlayer);
+				ImGui::Text("View Angles: X=%.1f Y=%.1f", viewAngles.x, viewAngles.y);
+
+				int entIndex = -1;
+				read<int>(LocalPlayer, C_CSPlayerPawn::m_iIDEntIndex, entIndex);
+				ImGui::Text("Crosshair Target Entity: %d", entIndex);
+			}
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::TextColored(ImColor(255, 200, 0), "Entity Scan Results (64 slots)");
+			ImGui::Separator();
+
+			int foundCount = 0;
+			int validPawnCount = 0;
+			int validHealthCount = 0;
+			int validDistCount = 0;
+			int validBoneCount = 0;
+			int visibleCount = 0;
+
+			if (LocalPlayer) {
+				int localTeam = E->GetTeam(LocalPlayer);
+				Vector3 localPos = E->GetPos(LocalPlayer);
+
+				ImGui::BeginChild("##EntityList", ImVec2(0, 250), true);
+
+				for (int i = 0; i < 64; i++) {
+					DWORD64 CurrentController = E->GetEntInfo(i);
+					DWORD64 CurrentPawn = E->GetEnt(i);
+
+					if (!CurrentController && !CurrentPawn)
+						continue;
+
+					foundCount++;
+					ImGui::TextColored(ImColor(200, 200, 200), "Entity [%d] - Controller: 0x%llX | Pawn: 0x%llX",
+						i, CurrentController, CurrentPawn);
+
+					if (!CurrentPawn || !CurrentController || CurrentPawn == LocalPlayer) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(150, 150, 150), "[SKIPPED: null or self]");
+						continue;
+					}
+					validPawnCount++;
+
+					int health = E->GetHealth(CurrentPawn);
+					if (health < 1 || health > 100) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(255, 100, 100), "[INVALID HEALTH: %d]", health);
+						continue;
+					}
+					validHealthCount++;
+
+					int teamNum = E->GetTeam(CurrentPawn);
+					Vector3 entPos = E->GetPos(CurrentPawn);
+					float distance = entPos.dist(localPos) / 100.0f;
+
+					ImGui::SameLine();
+					ImGui::TextColored(ImColor(100, 255, 100), "[HP:%d Team:%d Dist:%.0fm Pos:%.0f,%.0f,%.0f]",
+						health, teamNum, distance, entPos.x, entPos.y, entPos.z);
+
+					if (distance > USettings.ESP_Distance) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(255, 255, 100), "[TOO FAR]");
+						continue;
+					}
+					validDistCount++;
+
+					DWORD64 sceneNode = 0, BoneArray = 0;
+					bool boneRead = read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode) &&
+						sceneNode &&
+						read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray) &&
+						BoneArray;
+
+					if (!boneRead) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(255, 100, 100), "[BONE READ FAILED]");
+						continue;
+					}
+					validBoneCount++;
+
+					Vector3 bonePos = E->GetBonePos3D(BoneArray, 28);
+					Vector2 feetScreen = PosToScreen(bonePos);
+					bool isVisible = feetScreen.x > 0 && feetScreen.y > 0 && feetScreen.x < X_Screen && feetScreen.y < Y_Screen;
+
+					if (!isVisible) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(255, 255, 100), "[OFF SCREEN]");
+						continue;
+					}
+					visibleCount++;
+
+					bool showSquad = teamNum == localTeam && USettings.Show_Squad;
+					bool showEnemy = teamNum != localTeam && USettings.Show_Enemy;
+
+					if (!showSquad && !showEnemy) {
+						ImGui::SameLine();
+						ImGui::TextColored(ImColor(255, 255, 100), "[FILTER OFF: Squad=%d Enemy=%d]", USettings.Show_Squad, USettings.Show_Enemy);
+						continue;
+					}
+
+					ImGui::SameLine();
+					ImGui::TextColored(ImColor(0, 255, 255), "[SHOULD RENDER]");
+				}
+
+				ImGui::EndChild();
+			}
+			else {
+				ImGui::TextColored(ImColor(255, 50, 50), "Cannot scan entities - LocalPlayer is NULL");
+			}
+
+			ImGui::Spacing();
+			ImGui::TextColored(ImColor(255, 200, 0), "Pipeline Statistics:");
+			ImGui::Text("Found in entity list: %d / 64", foundCount);
+			ImGui::Text("Valid Pawn (not null/self): %d", validPawnCount);
+			ImGui::Text("Valid Health (1-100): %d", validHealthCount);
+			ImGui::Text("Within Distance (%.0fm): %d", USettings.ESP_Distance, validDistCount);
+			ImGui::Text("Bone Array Read OK: %d", validBoneCount);
+			ImGui::Text("On Screen: %d", visibleCount);
+
+			ImGui::Spacing();
+			ImGui::TextColored(ImColor(255, 200, 0), "Module Addresses:");
+			ImGui::Text("client.dll base: 0x%llX", client);
+			ImGui::Text("dwEntityList: 0x%X", client_dll::dwEntityList);
+			ImGui::Text("dwLocalPlayerPawn: 0x%X", client_dll::dwLocalPlayerPawn);
+			ImGui::Text("dwViewMatrix: 0x%X", client_dll::dwViewMatrix);
+
+			ImGui::Spacing();
+			ImGui::TextColored(ImColor(255, 200, 0), "Key Offsets:");
+			ImGui::Text("m_vOldOrigin: 0x%X", C_BasePlayerPawn::m_vOldOrigin);
+			ImGui::Text("m_angEyeAngles: 0x%X", C_CSPlayerPawn::m_angEyeAngles);
+			ImGui::Text("m_iIDEntIndex: 0x%X", C_CSPlayerPawn::m_iIDEntIndex);
+			ImGui::Text("m_pAimPunchServices: 0x%X", C_CSPlayerPawn::m_pAimPunchServices);
+			ImGui::Text("m_pWeaponServices: 0x%X", C_BasePlayerPawn::m_pWeaponServices);
+			ImGui::Text("m_pGameSceneNode: 0x%X", C_BaseEntity::m_pGameSceneNode);
+			ImGui::Text("m_iHealth: 0x%X", C_BaseEntity::m_iHealth);
+			ImGui::Text("m_iTeamNum: 0x%X", C_BaseEntity::m_iTeamNum);
+
+			ImGui::PopStyleColor();
+		}
+
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
 
@@ -811,15 +994,25 @@ void renderImGui() {
 			if (distance > USettings.ESP_Distance)
 				continue;
 
-			DWORD64 CameraServices, sceneNode, BoneArray, CurrentWeapon;
+			DWORD64 CameraServices, sceneNode, BoneArray, CurrentWeapon = 0;
 			if (!read<DWORD64>(LocalPlayer, C_BasePlayerPawn::m_pCameraServices, CameraServices) ||
 				!read<DWORD64>(CurrentPawn, C_BaseEntity::m_pGameSceneNode, sceneNode) ||
-				!read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray) ||
-				!read<DWORD64>(CurrentPawn, C_CSPlayerPawnBase::m_pClippingWeapon, CurrentWeapon))
+				!read<DWORD64>(sceneNode, CSkeletonInstance::m_modelState + 0x80, BoneArray))
 				continue;
 
-			if (!CurrentWeapon)
-				continue;
+			DWORD64 weaponServices;
+			if (read<DWORD64>(CurrentPawn, C_BasePlayerPawn::m_pWeaponServices, weaponServices) && weaponServices) {
+				int weaponHandle;
+				if (read<int>(weaponServices, CPlayer_WeaponServices::m_hActiveWeapon, weaponHandle)) {
+					DWORD64 entitylist;
+					if (read<DWORD64>(client, client_dll::dwEntityList, entitylist)) {
+						DWORD64 listEntry;
+						if (read<DWORD64>(entitylist, 0x8 * ((weaponHandle & 0x7FFF) >> 9) + 0x10, listEntry)) {
+							read<DWORD64>(listEntry, 0x78 * (weaponHandle & 0x1FF), CurrentWeapon);
+						}
+					}
+				}
+			}
 
 			Vector3 pos = E->GetBonePos3D(BoneArray, 28);
 			Vector2 feetpos = PosToScreen(pos);
@@ -891,8 +1084,6 @@ void renderImGui() {
 				
 				topPos.z += E->IsCrouching(fFlag) ? 55 : 75;
 				bottomPos.z -= 10;
-				
-				float distance = E->GetPos(LocalPlayer).dist(E->GetBonePos3D(BoneArray, 28)) / 100;
 				
 				Vector2 topScreen = PosToScreen(topPos);
 				Vector2 bottomScreen = PosToScreen(bottomPos);
@@ -993,7 +1184,7 @@ void renderImGui() {
 	}
 
 	if (USettings.DrawCrosshair && E->GetHealth(E->GetLocal()) > 0) {
-		bool shouldDraw = !USettings.whennotaiming || !GetAsyncKeyState(VK_RBUTTON);
+		bool shouldDraw = !USettings.whennotaiming && !GetAsyncKeyState(VK_RBUTTON);
 		if (shouldDraw) {
 			Vector2 screenCenter{ X_Screen / 2, Y_Screen / 2 };
 			float size = USettings.Crosshair_size;
@@ -1014,6 +1205,70 @@ void renderImGui() {
 			}
 			if (USettings.circle) {
 				DrawCircle(screenCenter, size, thickness, color);
+			}
+		}
+	}
+
+	{
+		DWORD64 dbgLocal = E->GetLocal();
+		if (dbgLocal && E->GetHealth(dbgLocal) > 0 && E->GetHealth(dbgLocal) <= 100) {
+			int dbgLocalTeam = E->GetTeam(dbgLocal);
+			Vector3 dbgLocalPos = E->GetPos(dbgLocal);
+			int dbgFound = 0, dbgValid = 0;
+
+			for (int i = 0; i < 64; i++) {
+				DWORD64 dbgPawn = E->GetEnt(i);
+				if (!dbgPawn || dbgPawn == dbgLocal) continue;
+				int dbgHealth = E->GetHealth(dbgPawn);
+				if (dbgHealth < 1 || dbgHealth > 100) continue;
+				dbgFound++;
+				int dbgTeam = E->GetTeam(dbgPawn);
+				Vector3 dbgEntPos = E->GetPos(dbgPawn);
+				float dbgDist = dbgEntPos.dist(dbgLocalPos) / 100.0f;
+				if (dbgDist <= USettings.ESP_Distance) {
+					bool showSquad = dbgTeam == dbgLocalTeam && USettings.Show_Squad;
+					bool showEnemy = dbgTeam != dbgLocalTeam && USettings.Show_Enemy;
+					if (showSquad || showEnemy) {
+						DWORD64 dbgScene = 0, dbgBones = 0;
+						if (read<DWORD64>(dbgPawn, C_BaseEntity::m_pGameSceneNode, dbgScene) && dbgScene) {
+							if (read<DWORD64>(dbgScene, CSkeletonInstance::m_modelState + 0x80, dbgBones) && dbgBones) {
+								Vector3 dbgBonePos = E->GetBonePos3D(dbgBones, 28);
+								Vector2 dbgScreen = PosToScreen(dbgBonePos);
+								if (dbgScreen.x > 0 && dbgScreen.y > 0 && dbgScreen.x < X_Screen && dbgScreen.y < Y_Screen) {
+									dbgValid++;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			ImVec2 dbgPos(10, Y_Screen - 80);
+			ImVec2 dbgSize(220, 70);
+			ImGui::GetBackgroundDrawList()->AddRectFilled(dbgPos, ImVec2(dbgPos.x + dbgSize.x, dbgPos.y + dbgSize.y), IM_COL32(0, 0, 0, 180), 6.0f);
+			ImGui::GetBackgroundDrawList()->AddRect(dbgPos, ImVec2(dbgPos.x + dbgSize.x, dbgPos.y + dbgSize.y), IM_COL32(255, 200, 0, 200), 6.0f);
+
+			char dbgBuf[256];
+			sprintf_s(dbgBuf, "[DEBUG] Local: HP=%d Team=%d Pos=%.0f,%.0f,%.0f",
+				E->GetHealth(dbgLocal), dbgLocalTeam, dbgLocalPos.x, dbgLocalPos.y, dbgLocalPos.z);
+			ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 5), IM_COL32(255, 255, 255, 255), dbgBuf);
+
+			sprintf_s(dbgBuf, "Entities: Found=%d | ESP-Ready=%d | Distance=%.0fm",
+				dbgFound, dbgValid, USettings.ESP_Distance);
+			ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 22), IM_COL32(255, 255, 255, 255), dbgBuf);
+
+			sprintf_s(dbgBuf, "ViewMatrix OK=%d | Screen=%dx%d",
+				(Matrix[3][0] || Matrix[3][1] || Matrix[3][2]), (int)X_Screen, (int)Y_Screen);
+			ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 39), IM_COL32(255, 255, 255, 255), dbgBuf);
+
+			if (dbgFound == 0) {
+				ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 56), IM_COL32(255, 80, 80, 255), "WARNING: No entities found! Check offsets.");
+			}
+			else if (dbgValid == 0 && dbgFound > 0) {
+				ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 56), IM_COL32(255, 255, 80, 255), "WARNING: Entities found but none ESP-ready.");
+			}
+			else {
+				ImGui::GetBackgroundDrawList()->AddText(ImVec2(dbgPos.x + 8, dbgPos.y + 56), IM_COL32(80, 255, 80, 255), "ESP is working correctly.");
 			}
 		}
 	}

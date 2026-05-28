@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include <vector>
 #include <Tlhelp32.h>
-#include <atlconv.h>
 #include <thread>
 #include <string>
 #include <fstream>
