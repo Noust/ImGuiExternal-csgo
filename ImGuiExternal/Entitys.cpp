@@ -11,7 +11,7 @@ DWORD64 Entitys::GetEnt(int index) {
         return NULL;
 
     DWORD64 CurrentController;
-    if (!read<DWORD64>(listentry, (index * 0x78), CurrentController))
+    if (!read<DWORD64>(listentry, (index * 0x70), CurrentController))
         return NULL;
 
     int pawnhandle;
@@ -22,7 +22,7 @@ DWORD64 Entitys::GetEnt(int index) {
     if (!read<DWORD64>(entitylist, listEntry2Offset(pawnhandle), ListEntry2))
         return NULL;
 
-    const DWORD64 currentPawnOffset = 0x78 * (pawnhandle & 0x1FF);
+    const DWORD64 currentPawnOffset = 0x70 * (pawnhandle & 0x1FF);
     DWORD64 CurrentPawn;
     if (!read<DWORD64>(ListEntry2, currentPawnOffset, CurrentPawn))
         return NULL;
@@ -47,7 +47,7 @@ DWORD64 Entitys::GetEntt(int handle) {
         return NULL;
 
     DWORD64 CurrentPawn;
-    if (!read<DWORD64>(ListEntry2, (0x78 * (handle & 0x1FF)), CurrentPawn))
+    if (!read<DWORD64>(ListEntry2, (0x70 * (handle & 0x1FF)), CurrentPawn))
         return NULL;
 
     return CurrentPawn;
@@ -65,7 +65,7 @@ DWORD64 Entitys::GetEntInfo(int index) {
 	DWORD64 listentry;
 	if (read<DWORD64>(entitylist, 0x10, listentry)) {
 		DWORD64 CurrentController;
-		if (read<DWORD64>(listentry, (index * 0x78), CurrentController)) {
+		if (read<DWORD64>(listentry, (index * 0x70), CurrentController)) {
 			return CurrentController;
 		}
 	}

@@ -136,6 +136,7 @@ namespace CSettings {
 		bool Show_Fps = false;
 
 		bool Backround_Animation = true;
+		bool Debug_Overlay = false;
 	};
 
 	inline Settings settings;

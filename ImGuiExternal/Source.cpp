@@ -39,7 +39,7 @@ int FindClosestEnemy() {
         if (entityHealth <= 0 || entityHealth > 100 || E->GetTeam(entityAddr) == localTeam)
             continue;
 
-        if (E->GetBonePos3D(boneArray, 28).dist(localPos) / 100.0f > USettings.ESP_Distance)
+        if (E->GetBonePos3D(boneArray, bones::origin).dist(localPos) / 100.0f > USettings.ESP_Distance)
             continue;
 
         Vector3 aimPos = E->GetBonePos3D(boneArray, USettings.Head_Target ? bones::head : bones::spine);
@@ -245,9 +245,8 @@ void renderImGui() {
 				CSettings::MenuWindow = tabValues[i];
 			}
 			
-			if (selected) ImGui::PopStyleColor();
-			
-			if (i < 3) ImGui::SameLine();
+			if (selected) ImGui::PopStyleColor();	
+			if (i < 4) ImGui::SameLine();
 		}
 
 		ImGui::EndChild();
@@ -727,6 +726,8 @@ void renderImGui() {
 		else if (CSettings::MenuWindow == 5) {
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
+			ImGui::Checkbox("Show Debug information on screen", &USettings.Debug_Overlay);
+
 			ImGui::TextColored(ImColor(255, 200, 0), "ESP Debug Console");
 			ImGui::Separator();
 
@@ -846,7 +847,7 @@ void renderImGui() {
 					}
 					validBoneCount++;
 
-					Vector3 bonePos = E->GetBonePos3D(BoneArray, 28);
+					Vector3 bonePos = E->GetBonePos3D(BoneArray, bones::origin);
 					Vector2 feetScreen = PosToScreen(bonePos);
 					bool isVisible = feetScreen.x > 0 && feetScreen.y > 0 && feetScreen.x < X_Screen && feetScreen.y < Y_Screen;
 
@@ -1008,13 +1009,13 @@ void renderImGui() {
 					if (read<DWORD64>(client, client_dll::dwEntityList, entitylist)) {
 						DWORD64 listEntry;
 						if (read<DWORD64>(entitylist, 0x8 * ((weaponHandle & 0x7FFF) >> 9) + 0x10, listEntry)) {
-							read<DWORD64>(listEntry, 0x78 * (weaponHandle & 0x1FF), CurrentWeapon);
+							read<DWORD64>(listEntry, 0x70 * (weaponHandle & 0x1FF), CurrentWeapon);
 						}
 					}
 				}
 			}
 
-			Vector3 pos = E->GetBonePos3D(BoneArray, 28);
+			Vector3 pos = E->GetBonePos3D(BoneArray, 0);
 			Vector2 feetpos = PosToScreen(pos);
 			Vector3 pos1 = pos;
 
@@ -1209,7 +1210,7 @@ void renderImGui() {
 		}
 	}
 
-	{
+	if (USettings.Debug_Overlay) {
 		DWORD64 dbgLocal = E->GetLocal();
 		if (dbgLocal && E->GetHealth(dbgLocal) > 0 && E->GetHealth(dbgLocal) <= 100) {
 			int dbgLocalTeam = E->GetTeam(dbgLocal);
@@ -1232,7 +1233,7 @@ void renderImGui() {
 						DWORD64 dbgScene = 0, dbgBones = 0;
 						if (read<DWORD64>(dbgPawn, C_BaseEntity::m_pGameSceneNode, dbgScene) && dbgScene) {
 							if (read<DWORD64>(dbgScene, CSkeletonInstance::m_modelState + 0x80, dbgBones) && dbgBones) {
-								Vector3 dbgBonePos = E->GetBonePos3D(dbgBones, 28);
+								Vector3 dbgBonePos = E->GetBonePos3D(dbgBones, bones::origin);
 								Vector2 dbgScreen = PosToScreen(dbgBonePos);
 								if (dbgScreen.x > 0 && dbgScreen.y > 0 && dbgScreen.x < X_Screen && dbgScreen.y < Y_Screen) {
 									dbgValid++;
